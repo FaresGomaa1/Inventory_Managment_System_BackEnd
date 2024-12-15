@@ -1,58 +1,61 @@
 # **Product Management Backend System**
 
 ### **Overview**  
-This is the backend repository for a product management system. The backend is built with **ASP.NET Core** and provides essential APIs for managing products, users, and authentication. It connects seamlessly with the front-end system and database to ensure efficient data handling and secure operations.
+This repository houses the backend for a **Product Management System** built with **ASP.NET Core**. The backend provides robust APIs for managing products, users, and authentication. It ensures secure and efficient communication with the front-end and integrates seamlessly with a database for reliable data storage and retrieval.
 
 ---
 
 ## **Features**  
-- **Product Management**  
-   - Create, Read, Update, and Delete (CRUD) operations for product details.  
-   - Fetch product data dynamically using RESTful APIs.  
 
-- **User Authentication and Authorization**  
-   - Implements **Identity Framework** for secure user registration, login, and role-based access.  
+### **Product Management**  
+- Full **CRUD operations** for product details.  
+- Real-time product data retrieval using RESTful APIs.  
 
-- **Database Integration**  
-   - Connects with **MS SQL Server** to store product data, user information, and transactional details.  
+### **User Authentication and Authorization**  
+- Powered by **Identity Framework** for secure user registration and login.  
+- Role-based access control to ensure proper authorization.  
 
-- **Email Notifications**  
-   - Integrates with **EmailJs** for sending notifications such as order updates and user confirmations.  
+### **Database Integration**  
+- Utilizes **MS SQL Server** to store product, user, and transactional data.  
 
-- **Web API Development**  
-   - Provides clean and structured endpoints for front-end communication.  
+### **Email Notifications**  
+- Integrates with **EmailJs** for sending essential notifications, such as order updates and user confirmations.  
+
+### **Web API Development**  
+- Clean and well-structured endpoints for seamless front-end communication.
 
 ---
 
 ## **Technologies Used**  
-| Technology         | Purpose                    |  
-|--------------------|----------------------------|  
-| **ASP.NET Core**   | Backend framework          |  
-| **MS SQL Server**  | Database management        |  
-| **Identity Framework** | User authentication and authorization |  
-| **Web API**        | RESTful API for front-end communication |  
-| **EmailJs**        | Third-party email service  |  
+
+| **Technology**       | **Purpose**                                 |  
+|-----------------------|---------------------------------------------|  
+| **ASP.NET Core**      | Backend framework for API development       |  
+| **MS SQL Server**     | Database management and storage             |  
+| **Identity Framework**| User authentication and authorization       |  
+| **Web API**           | RESTful API to connect front-end and backend|  
+| **EmailJs**           | Third-party email service for notifications |  
 
 ---
 
-## **Setup Instructions**
+## **Setup Instructions**  
 
-Follow these steps to set up and run the backend on your local machine:
+Follow these steps to set up and run the backend on your local machine:  
 
 ### **1. Prerequisites**  
-- Install [.NET SDK](https://dotnet.microsoft.com/download) (latest version).  
-- Install **MS SQL Server** and set up a database.  
-- (Optional) Install a tool like **Postman** for API testing.  
+- Install the latest version of [.NET SDK](https://dotnet.microsoft.com/download).  
+- Install **MS SQL Server** and configure a database.  
+- (Optional) Install **Postman** or similar tools for API testing.  
 
 ### **2. Clone the Repository**  
 ```bash
 git clone https://github.com/FaresGomaa1/Inventory_Managment_System_BackEnd.git
-cd backend-product-management
+cd Inventory_Managment_System_BackEnd
 ```
 
 ### **3. Configure the Database**  
-- Open the `appsettings.json` file.  
-- Update the connection string for your **SQL Server**:  
+1. Open the `appsettings.json` file in the project root directory.  
+2. Update the connection string with your **SQL Server** credentials:  
    ```json
    "ConnectionStrings": {
       "DefaultConnection": "Server=YOUR_SERVER_NAME;Database=YOUR_DB_NAME;User Id=YOUR_USERNAME;Password=YOUR_PASSWORD;"
@@ -60,7 +63,7 @@ cd backend-product-management
    ```
 
 ### **4. Run Migrations**  
-To create the database schema, run the following commands:  
+Generate the database schema by running the following commands:  
 ```bash
 dotnet ef database update
 ```
@@ -70,43 +73,47 @@ Start the server:
 ```bash
 dotnet run
 ```
-The API will be available at: `http://localhost:5000` (default).
+The application will be accessible at `http://localhost:5000` (default).
 
 ---
 
-## **API Endpoints**
+## **API Endpoints**  
 
-Here are the main endpoints for the backend:
+### **Product Endpoints**  
+| **Endpoint**              | **Method**   | **Description**              |  
+|---------------------------|--------------|------------------------------|  
+| `/api/products`           | GET          | Retrieve all products         |  
+| `/api/products/{id}`      | GET          | Retrieve product by ID        |  
+| `/api/products`           | POST         | Add a new product             |  
+| `/api/products/{id}`      | PUT          | Update an existing product    |  
+| `/api/products/{id}`      | DELETE       | Delete a product              |  
 
-| Endpoint              | Method   | Description                       |  
-|-----------------------|----------|-----------------------------------|  
-| `/api/products`       | GET      | Get all products                  |  
-| `/api/products/{id}`  | GET      | Get product by ID                 |  
-| `/api/products`       | POST     | Create a new product              |  
-| `/api/products/{id}`  | PUT      | Update an existing product        |  
-| `/api/products/{id}`  | DELETE   | Delete a product                  |  
-| `/api/auth/register`  | POST     | User registration                 |  
-| `/api/auth/login`     | POST     | User login and token generation   |  
+### **Authentication Endpoints**  
+| **Endpoint**              | **Method**   | **Description**              |  
+|---------------------------|--------------|------------------------------|  
+| `/api/auth/register`      | POST         | User registration             |  
+| `/api/auth/login`         | POST         | User login and token generation|  
 
 ---
 
-## **Testing**
+## **Testing**  
 
-- Use **Postman** or tools like **Swagger UI** to test the API endpoints.  
-- Write unit tests for critical components using **xUnit** or **NUnit**.
+- Use **Postman**, **Swagger UI**, or similar tools to test API endpoints.  
+- Write unit tests using **xUnit** or **NUnit** to validate application logic and APIs.  
 
 ---
 
 ## **Future Improvements**  
-- Add pagination and filtering for product data.  
-- Implement role-based authorization for API endpoints.  
-- Enhance logging and error handling.
+- Add **pagination** and **filtering** options for product endpoints.  
+- Implement **advanced role-based authorization** for critical operations.  
+- Integrate **logging and error handling** for better debugging and traceability.  
 
 ---
 
-## **Contributing**
+## **Contributing**  
 
-I welcome contributions!  
+Contributions are welcome! Follow these steps to contribute:  
+
 1. Fork the repository.  
 2. Create a new branch:  
    ```bash
@@ -116,25 +123,37 @@ I welcome contributions!
    ```bash
    git commit -m "Add a new feature"
    ```
-4. Push to the branch:  
+4. Push your changes:  
    ```bash
    git push origin feature-branch
    ```
-5. Create a Pull Request.
+5. Open a Pull Request.
 
 ---
 
 ## **License**  
+
 This project is licensed under the [MIT License](LICENSE).  
 
 ---
 
 ## **Contact**  
+
 For any questions or suggestions, feel free to reach out:  
-- **Fares Gomaa**: [fares.gomaa.work@gmail.com](fares.gomaa.work@gmail.com)  
-- **GitHub**: [FaresGomaa1](https://github.com/FaresGomaa1)
+- **Fares Gomaa**  
+   - **Email**: [fares.gomaa.work@gmail.com](mailto:fares.gomaa.work@gmail.com)  
+   - **GitHub**: [FaresGomaa1](https://github.com/FaresGomaa1)  
 
 ---
 
 ### **Acknowledgments**  
-- Special thanks to the developers and resources behind ASP.NET Core and other tools.
+
+Special thanks to the **ASP.NET Core** team and the creators of the tools and technologies used in this project.  
+---
+
+### **What’s Improved?**
+- Added structured headers for better readability.  
+- Expanded on features for clarity and professional tone.  
+- Provided more explicit and user-friendly setup steps.  
+- Enhanced the contributing section with clear steps for collaboration.  
+- Reformatted tables and sections for consistent presentation.  
