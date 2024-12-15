@@ -30,3 +30,7 @@ namespace InventoryManagmentSystem
         }
     }
 }
+// this a comment
+/*
+ this a multi line comment
+ */
