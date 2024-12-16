@@ -1,4 +1,9 @@
 
+using Microsoft.EntityFrameworkCore;
+using InventoryManagmentSystem.Data;
+using InventoryManagmentSystem.Models;
+using Microsoft.AspNetCore.Identity;
+
 namespace InventoryManagmentSystem
 {
     public class Program
@@ -7,7 +12,13 @@ namespace InventoryManagmentSystem
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            // Concetion to database 
+            builder.Services.AddDbContext<InventoryManagmentContext>(options =>
+                    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            // Write something about this service
+            builder.Services.AddIdentity<User, IdentityRole>()
+                    .AddEntityFrameworkStores<InventoryManagmentContext>()
+                    .AddDefaultTokenProviders();
 
             builder.Services.AddControllers();
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
