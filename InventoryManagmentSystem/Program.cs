@@ -26,6 +26,7 @@ namespace InventoryManagmentSystem
                 .AddDefaultTokenProviders();
 
             builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddScoped<IRequestRepository, RequestRepository>();
 
             // Add Controllers
             builder.Services.AddControllers();
