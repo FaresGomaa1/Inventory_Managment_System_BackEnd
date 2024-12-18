@@ -36,6 +36,15 @@ namespace InventoryManagmentSystem.Data
             modelBuilder.Entity<User>()
                 .HasIndex(e => e.Email)
                 .IsUnique();
+            modelBuilder.Entity<Supplier>()
+                .HasIndex(e => e.Email)
+                .IsUnique();
+            modelBuilder.Entity<Request>()
+                .HasIndex(e => e.SKU)
+                .IsUnique();
+            modelBuilder.Entity<Product>()
+                .HasIndex(e => e.SKU)
+                .IsUnique();
             modelBuilder.Entity<User>()
             .HasOne(u => u.Manager) 
             .WithMany(u => u.Subordinates) 

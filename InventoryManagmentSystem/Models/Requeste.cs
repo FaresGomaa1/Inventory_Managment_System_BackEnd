@@ -17,12 +17,12 @@ namespace InventoryManagmentSystem.Models
         public string Description { get; set; }
         [Required]
         public DateTime CreatedOn { get; set; }
-        public bool InventoryManagerDecision { get; set; }
+        public bool? InventoryManagerDecision { get; set; }
         [MaxLength(500)]
-        public string InventoryManagerComment { get; set; }
-        public bool DepartmentManagerDecision { get; set; }
+        public string? InventoryManagerComment { get; set; }
+        public bool? DepartmentManagerDecision { get; set; }
         [MaxLength(500)]
-        public string DepartmentManagerComment { get; set; }
+        public string? DepartmentManagerComment { get; set; }
         [Required]
         [ForeignKey("Category")]
         public int CategoryId { get; set; }
@@ -32,10 +32,10 @@ namespace InventoryManagmentSystem.Models
         public int SupplierId { get; set; }
         public virtual Supplier Supplier { get; set; }
         [ForeignKey("User")]
-        public string UserId { get; set; }
+        public string? UserId { get; set; }
         public virtual User User { get; set; }
         [ForeignKey("Team")]
-        public int TeamId { get; set; }
+        public int? TeamId { get; set; }
         public virtual Team Team { get; set; }
     }
 }
