@@ -19,6 +19,8 @@ namespace InventoryManagmentSystem.DTOs
         [Required]
         [EmailAddress]
         public string Email { get; set; }
+        public bool IsManager { get; set; }
+        public string ManagerId { get; set; }
     }
     public class LoginDTO
     {
