@@ -4,6 +4,7 @@ using InventoryManagmentSystem.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InventoryManagmentSystem.Migrations
 {
     [DbContext(typeof(InventoryManagmentContext))]
-    partial class InventoryManagmentContextModelSnapshot : ModelSnapshot
+    [Migration("20241218183619_AddManagerField")]
+    partial class AddManagerField
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -219,6 +222,7 @@ namespace InventoryManagmentSystem.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("ManagerId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("NormalizedEmail")
@@ -481,7 +485,8 @@ namespace InventoryManagmentSystem.Migrations
                     b.HasOne("InventoryManagmentSystem.Models.User", "Manager")
                         .WithMany("Subordinates")
                         .HasForeignKey("ManagerId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("Team", "Team")
                         .WithMany("Members")

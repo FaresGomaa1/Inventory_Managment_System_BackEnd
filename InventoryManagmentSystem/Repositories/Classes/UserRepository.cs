@@ -89,14 +89,11 @@ namespace InventoryManagmentSystem.Repositories.Classes
         // Create a user with specified roles
         public async Task<string> CreateUser(RegisterDTO model)
         {
-            var user = await _userManager.FindByEmailAsync(model.Email);
-            if (user != null)
-                throw new InvalidOperationException("Email");
-            user = await _userManager.FindByNameAsync(model.UserName);
-            if (user != null)
-                throw new InvalidOperationException("UserName");
+            // Step 1: Validate Email and Username
+            await ValidateUserDetails(model);
 
-            user = new User
+            // Step 2: Create a new User object
+            var user = new User
             {
                 FirstName = model.FirstName,
                 LastName = model.LastName,
@@ -104,33 +101,49 @@ namespace InventoryManagmentSystem.Repositories.Classes
                 UserName = model.UserName,
                 Email = model.Email,
             };
-            switch (model.Role)
-            {
-                case "Staff Member":
-                    user.TeamId = 1;
-                    break;
-                case "Inventory Manager":
-                    user.TeamId = 2;
-                    break;
-                case "Department Manager":
-                    user.TeamId = 3;
-                    break;
-                default:
-                    throw new ArgumentException("Invalid role specified");
-            }
-            var result = await _userManager.CreateAsync(user, model.Password);
 
-            if (result.Succeeded)
+            // Step 3: Handle Manager Assignment
+            if (!model.IsManager && !string.IsNullOrEmpty(model.ManagerId))
             {
-                await AssignRolesToUser(model.Role, user);
-                return "User created successfully!";
+                user.ManagerId = await AssignManager(model);
+                user.TeamId = AssignTeamId(model.Role);
             }
             else
             {
+                // Validate and process the role
+                var roleParts = model.Role.Split(' ');
+
+                if (roleParts.Length == 3)
+                {
+                    var lastWord = roleParts.Last();
+
+                    if (string.Equals(lastWord, "Manager", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Step 4: Assign Team Based on Role
+                        user.TeamId = AssignTeamId(model.Role);
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"Invalid role format: {model.Role}");
+                    }
+                }
+                else
+                {
+                    throw new ArgumentException($"Role must contain exactly three words: {model.Role}");
+                }
+            }
+            // Step 5: Create User
+            var result = await _userManager.CreateAsync(user, model.Password);
+            if (!result.Succeeded)
+            {
                 throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));
             }
-        }
 
+            // Step 6: Assign Roles to User
+            await AssignRolesToUser(model.Role, user);
+
+            return "User created successfully!";
+        }
         private async Task<bool> CheckEmailAndUserName(string email, string username)
         {
             // Ensure either email or username is provided
@@ -142,28 +155,23 @@ namespace InventoryManagmentSystem.Repositories.Classes
             switch (role)
             {
                 case "Staff Member":
-                    await EnsureRoleExistsAndAssign("Request-C", user);
-                    await EnsureRoleExistsAndAssign("Request-R", user);
-                    await EnsureRoleExistsAndAssign("Request-U", user);
-                    await EnsureRoleExistsAndAssign("Request-D", user);
-                    await EnsureRoleExistsAndAssign("Product-R", user);
-                    await EnsureRoleExistsAndAssign("Category-C", user);
-                    await EnsureRoleExistsAndAssign("Category-U", user);
-                    await EnsureRoleExistsAndAssign("Category-R", user);
-                    await EnsureRoleExistsAndAssign("Supplier-R", user);
-                    await EnsureRoleExistsAndAssign("Supplier-C", user);
-                    await EnsureRoleExistsAndAssign("Supplier-U", user);
+                    await EnsureRoleExistsAndAssign("Staff Member", user);
                     break;
-
+                case "Staff Member Manager":
+                    await EnsureRoleExistsAndAssign("Staff Member Manager", user);
+                    break;
                 case "Inventory Manager":
-                case "Department Manager":
-                    await EnsureRoleExistsAndAssign("Request-R", user);
-                    await EnsureRoleExistsAndAssign("Request-U", user);
-                    await EnsureRoleExistsAndAssign("Product-R", user);
-                    await EnsureRoleExistsAndAssign("Category-R", user);
-                    await EnsureRoleExistsAndAssign("Supplier-R", user);
+                    await EnsureRoleExistsAndAssign("Inventory Manager", user);
                     break;
-
+                case "Inventory Manager Manager":
+                    await EnsureRoleExistsAndAssign("Inventory Manager Manager", user);
+                    break;
+                case "Department Manager":
+                    await EnsureRoleExistsAndAssign("Department Manager", user);
+                    break;
+                case "Department Manager Manager":
+                    await EnsureRoleExistsAndAssign("Department Manager Manager", user);
+                    break;
                 default:
                     throw new ArgumentException("Invalid role specified");
             }
@@ -186,6 +194,50 @@ namespace InventoryManagmentSystem.Repositories.Classes
                 throw new Exception($"Failed to assign role '{roleName}' to user: {string.Join(", ", addToRoleResult.Errors.Select(e => e.Description))}");
             }
         }
+        private async Task ValidateUserDetails(RegisterDTO model)
+        {
+            var userByEmail = await _userManager.FindByEmailAsync(model.Email);
+            if (userByEmail != null)
+                throw new InvalidOperationException("Email");
 
+            var userByName = await _userManager.FindByNameAsync(model.UserName);
+            if (userByName != null)
+                throw new InvalidOperationException("UserName");
+        }
+        private async Task<string?> AssignManager(RegisterDTO model)
+        {
+            var manager = await _userManager.FindByIdAsync(model.ManagerId);
+            if (manager == null)
+            {
+                throw new ArgumentException($"Manager with ID {model.ManagerId} not found.");
+            }
+
+            var roles = await _userManager.GetRolesAsync(manager);
+            if (roles == null || roles.Count == 0)
+            {
+                throw new InvalidOperationException($"Manager with ID {model.ManagerId} has no assigned roles.");
+            }
+
+            var primaryRole = roles[0];
+            var rolePrefix = string.Join(" ", primaryRole.Split(' ').Take(2));
+
+            if (!string.Equals(rolePrefix, model.Role, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException($"Manager's role does not match the expected role for {model.Role}.");
+            }
+
+            return model.ManagerId;
+        }
+        private int AssignTeamId(string role)
+        {
+            return role switch
+            {
+                "Staff Member" or "Staff Member Manager" => 1,
+                "Inventory Manager" or "Inventory Manager Manager" => 2,
+                "Department Manager" or "Department Manager Manager" => 3,
+                _ => throw new ArgumentException("Invalid role specified")
+            };
+        }
+        
     }
 }
