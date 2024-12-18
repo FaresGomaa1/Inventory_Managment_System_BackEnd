@@ -33,6 +33,9 @@ namespace InventoryManagmentSystem.Data
                 .WithMany(t => t.Members)
                 .HasForeignKey(u => u.TeamId)
                 .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<User>()
+                .HasIndex(e => e.Email)
+                .IsUnique();
         }
 
 
