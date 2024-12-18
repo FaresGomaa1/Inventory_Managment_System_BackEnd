@@ -55,38 +55,6 @@ namespace InventoryManagmentSystem.Repositories.Classes
 
             return (true, "Login successful.", token);
         }
-        private async Task<string> GenerateJwtToken(User user)
-        {
-            // Get user roles
-            var roles = await _userManager.GetRolesAsync(user);
-
-            // Create claims
-            var claims = new List<Claim>
-                                {
-                                    new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
-                                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                                    new Claim(ClaimTypes.NameIdentifier, user.Id)
-                                };
-
-            // Add role claims
-            claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
-
-            // Define signing credentials
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("YourLongerSuperSecretKeyHere123456"));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            // Create JWT token
-            var token = new JwtSecurityToken(
-                issuer: "YourIssuer",
-                audience: "YourAudience",
-                claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(60),
-                signingCredentials: creds
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        }
-        // Create a user with specified roles
         public async Task<string> CreateUser(RegisterDTO model)
         {
             // Step 1: Validate Email and Username
@@ -105,8 +73,8 @@ namespace InventoryManagmentSystem.Repositories.Classes
             // Step 3: Handle Manager Assignment
             if (!model.IsManager && !string.IsNullOrEmpty(model.ManagerId))
             {
-                user.ManagerId = await AssignManager(model);
                 user.TeamId = AssignTeamId(model.Role);
+                user.ManagerId = await AssignManager(model, user.TeamId);
             }
             else
             {
@@ -144,12 +112,42 @@ namespace InventoryManagmentSystem.Repositories.Classes
 
             return "User created successfully!";
         }
+        private async Task<string> GenerateJwtToken(User user)
+        {
+            // Get user roles
+            var roles = await _userManager.GetRolesAsync(user);
+
+            // Create claims
+            var claims = new List<Claim>
+                                {
+                                    new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
+                                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                                    new Claim(ClaimTypes.NameIdentifier, user.Id)
+                                };
+
+            // Add role claims
+            claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+
+            // Define signing credentials
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("YourLongerSuperSecretKeyHere123456"));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            // Create JWT token
+            var token = new JwtSecurityToken(
+                issuer: "YourIssuer",
+                audience: "YourAudience",
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(60),
+                signingCredentials: creds
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
         private async Task<bool> CheckEmailAndUserName(string email, string username)
         {
             // Ensure either email or username is provided
             return !string.IsNullOrWhiteSpace(email) || !string.IsNullOrWhiteSpace(username);
         }
-        // Assign roles to the user based on the provided role
         private async Task AssignRolesToUser(string role, User user)
         {
             switch (role)
@@ -176,7 +174,6 @@ namespace InventoryManagmentSystem.Repositories.Classes
                     throw new ArgumentException("Invalid role specified");
             }
         }
-        // Helper method to ensure role exists and assign it to the user
         private async Task EnsureRoleExistsAndAssign(string roleName, User user)
         {
             if (!await _roleManager.RoleExistsAsync(roleName))
@@ -204,7 +201,7 @@ namespace InventoryManagmentSystem.Repositories.Classes
             if (userByName != null)
                 throw new InvalidOperationException("UserName");
         }
-        private async Task<string?> AssignManager(RegisterDTO model)
+        private async Task<string?> AssignManager(RegisterDTO model, int userTeamId)
         {
             var manager = await _userManager.FindByIdAsync(model.ManagerId);
             if (manager == null)
@@ -218,10 +215,7 @@ namespace InventoryManagmentSystem.Repositories.Classes
                 throw new InvalidOperationException($"Manager with ID {model.ManagerId} has no assigned roles.");
             }
 
-            var primaryRole = roles[0];
-            var rolePrefix = string.Join(" ", primaryRole.Split(' ').Take(2));
-
-            if (!string.Equals(rolePrefix, model.Role, StringComparison.OrdinalIgnoreCase))
+            if (manager.TeamId != userTeamId)
             {
                 throw new InvalidOperationException($"Manager's role does not match the expected role for {model.Role}.");
             }
