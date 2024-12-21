@@ -6,7 +6,7 @@ namespace InventoryManagmentSystem.DTOs
 {
     public class AddRequest
     {
-       
+
         [Required]
         public string RequestType { get; set; }
         [Required]
@@ -26,7 +26,7 @@ namespace InventoryManagmentSystem.DTOs
         public int SupplierId { get; set; }
         public string? UserId { get; set; }
     }
-    public class UpdateRequest: AddRequest
+    public class UpdateRequest : AddRequest
     {
         [Required]
         public int RequestId { get; set; }

@@ -125,7 +125,7 @@ namespace InventoryManagmentSystem.Repositories.Classes
                 CreatedOn = DateTime.UtcNow,
                 Status = true,
                 RquestStatus = "New Request"
-                
+
             };
 
             // Add and save the new request
@@ -150,7 +150,7 @@ namespace InventoryManagmentSystem.Repositories.Classes
             }
             return user;
         }
-        private async Task CheckSKU(string newSKU) 
+        private async Task CheckSKU(string newSKU)
         {
             var existingProduct = await _context.Products.FirstOrDefaultAsync(r => r.SKU == newSKU);
             if (existingProduct != null && newSKU != existingProduct.SKU)
