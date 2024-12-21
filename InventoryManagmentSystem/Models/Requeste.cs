@@ -7,6 +7,12 @@ namespace InventoryManagmentSystem.Models
     public class Request : BaseClass
     {
         [Required]
+        public bool Status { get; set; }
+        [Required]
+        public string RquestStatus {  get; set; }
+        [Required]
+        public string RequestType { get; set; }
+        [Required]
         public double Price { get; set; }
         [Required]
         public string SKU { get; set; }
