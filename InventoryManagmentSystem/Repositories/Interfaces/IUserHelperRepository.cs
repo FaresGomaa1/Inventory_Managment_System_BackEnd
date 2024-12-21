@@ -3,7 +3,7 @@ using InventoryManagmentSystem.Models;
 
 namespace InventoryManagmentSystem.Repositories.Interfaces
 {
-    public interface IHelperRepository
+    public interface IUserHelperRepository
     {
         Task<string> GenerateJwtToken(User user);
         Task<bool> CheckEmailAndUserName(string email, string username);

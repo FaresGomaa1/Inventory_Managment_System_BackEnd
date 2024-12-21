@@ -27,7 +27,9 @@ namespace InventoryManagmentSystem
 
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<IRequestRepository, RequestRepository>();
-            builder.Services.AddScoped<IHelperRepository, HelperRepository>();
+            // Helper Repos
+            builder.Services.AddScoped<IUserHelperRepository, UserHelperRepository>();
+            builder.Services.AddScoped<IRequestHelperRepository, RequestHelperRepository>();
 
             // Add Controllers
             builder.Services.AddControllers();

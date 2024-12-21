@@ -7,11 +7,11 @@ namespace InventoryManagmentSystem.Repositories.Classes
 {
     public class UserRepository: IUserRepository  
     {
-        private readonly UserManager<User> _userManager;
-        private readonly RoleManager<IdentityRole> _roleManager;
-        private readonly IHelperRepository _helperRepository;
+        public readonly UserManager<User> _userManager;
+        public readonly RoleManager<IdentityRole> _roleManager;
+        public readonly IUserHelperRepository _helperRepository;
 
-        public UserRepository(UserManager<User> userManager, RoleManager<IdentityRole> roleManager, IHelperRepository helperRepository)
+        public UserRepository(UserManager<User> userManager, RoleManager<IdentityRole> roleManager, IUserHelperRepository helperRepository)
         {
             _userManager = userManager;
             _roleManager = roleManager;
@@ -110,7 +110,5 @@ namespace InventoryManagmentSystem.Repositories.Classes
 
             return "User created successfully!";
         }
-
-        
     }
 }
