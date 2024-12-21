@@ -4,6 +4,7 @@ using InventoryManagmentSystem.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InventoryManagmentSystem.Migrations
 {
     [DbContext(typeof(InventoryManagmentContext))]
-    partial class InventoryManagmentContextModelSnapshot : ModelSnapshot
+    [Migration("20241221003710_wwwwww")]
+    partial class wwwwww
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -140,7 +143,7 @@ namespace InventoryManagmentSystem.Migrations
 
                     b.Property<string>("SKU")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<bool>("Status")
                         .HasColumnType("bit");
@@ -157,6 +160,9 @@ namespace InventoryManagmentSystem.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
+
+                    b.HasIndex("SKU")
+                        .IsUnique();
 
                     b.HasIndex("SupplierId");
 

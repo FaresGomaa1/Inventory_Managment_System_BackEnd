@@ -39,9 +39,6 @@ namespace InventoryManagmentSystem.Data
             modelBuilder.Entity<Supplier>()
                 .HasIndex(e => e.Email)
                 .IsUnique();
-            modelBuilder.Entity<Request>()
-                .HasIndex(e => e.SKU)
-                .IsUnique();
             modelBuilder.Entity<Product>()
                 .HasIndex(e => e.SKU)
                 .IsUnique();
