@@ -11,16 +11,14 @@ using System.Text;
 
 namespace InventoryManagmentSystem.Repositories.Classes
 {
-    public class HelperRepository: IHelperRepository
+    public class UserHelperRepository: IUserHelperRepository
     {
-        private readonly UserManager<User> _userManager;
-        private readonly RoleManager<IdentityRole> _roleManager;
-        private readonly InventoryManagmentContext _context;
-        public HelperRepository(UserManager<User> userManager, RoleManager<IdentityRole> roleManager, InventoryManagmentContext context) 
+        public readonly UserManager<User> _userManager;
+        public readonly RoleManager<IdentityRole> _roleManager;
+        public UserHelperRepository(UserManager<User> userManager, RoleManager<IdentityRole> roleManager) 
         {
             _userManager = userManager;
             _roleManager = roleManager;
-            _context = context;
         }   
         public async Task<string> GenerateJwtToken(User user)
         {

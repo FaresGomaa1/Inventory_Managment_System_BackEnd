@@ -10,9 +10,9 @@ namespace InventoryManagmentSystem.Controllers
     [ApiController]
     public class UserController : ControllerBase
     {
-        private readonly UserManager<User> _userManager;
-        private readonly RoleManager<IdentityRole> _roleManager;
-        private readonly IUserRepository _userRepository;
+        public readonly UserManager<User> _userManager;
+        public readonly RoleManager<IdentityRole> _roleManager;
+        public readonly IUserRepository _userRepository;
 
         public UserController(UserManager<User> userManager, RoleManager<IdentityRole> roleManager, IUserRepository userRepository)
         {

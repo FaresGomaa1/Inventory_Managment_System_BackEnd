@@ -13,12 +13,15 @@ namespace InventoryManagmentSystem.Repositories.Classes
     {
         private readonly InventoryManagmentContext _context;
         private readonly UserManager<User> _userManager;
+        private readonly IRequestHelperRepository _requestHelperRepository;
+
 
         // Inject dependencies into the repository
-        public RequestRepository(InventoryManagmentContext context, UserManager<User> userManager)
+        public RequestRepository(InventoryManagmentContext context, UserManager<User> userManager, IRequestHelperRepository requestHelperRepository)
         {
             _context = context;
             _userManager = userManager;
+            _requestHelperRepository = requestHelperRepository;
         }
 
         public async Task CreateRequest(AddRequest requestDetails)
@@ -30,36 +33,21 @@ namespace InventoryManagmentSystem.Repositories.Classes
             switch (requestDetails.RequestType)
             {
                 case "Add Request":
-                    await HandleAddRequestAsync(requestDetails);
+                    await _requestHelperRepository.HandleAddRequestAsync(requestDetails);
                     break;
 
                 case "Update Request":
-                    await CheckSKU(requestDetails.SKU);
+                    await _requestHelperRepository.CheckSKU(requestDetails.SKU);
                     break;
 
                 default:
                     throw new ArgumentException($"Unsupported request type: {requestDetails.RequestType}", nameof(requestDetails.RequestType));
             }
             // Fetch the user details
-            User user = await GetUserByIdAsync(requestDetails.UserId);
+            User user = _requestHelperRepository.GetUserById(requestDetails.UserId);
 
             // Create a new request based on the provided details
-            var newRequest = new Request
-            {
-                Name = requestDetails.ProductName,
-                Price = requestDetails.Price,
-                SKU = requestDetails.SKU,
-                Quantity = requestDetails.Quantity,
-                Description = requestDetails.Description,
-                CreatedOn = DateTime.UtcNow,
-                CategoryId = requestDetails.CategoryId,
-                SupplierId = requestDetails.SupplierId,
-                UserId = requestDetails.UserId,
-                TeamId = user.TeamId,
-                RequestType = requestDetails.RequestType,
-                RquestStatus = "New Request",
-                Status = true,
-            };
+            var newRequest = _requestHelperRepository.CreateRequestFromDetails(requestDetails, user.Id, user.TeamId);
 
             // Save the new request to the database
             await _context.Requests.AddAsync(newRequest);
@@ -69,17 +57,17 @@ namespace InventoryManagmentSystem.Repositories.Classes
         public async Task UpdateRequest(UpdateRequest updateRequest)
         {
             // Fetch the user details
-            User user = await GetUserByIdAsync(updateRequest.UserId);
+            User user = _requestHelperRepository.GetUserById(updateRequest.UserId);
             // Fetch the request to be updated
             var request = await _context.Requests.FirstOrDefaultAsync(r => r.Id == updateRequest.RequestId);
             if (request == null)
             {
                 throw new InvalidOperationException("Request not found");
             }
-            await CheckSKU(updateRequest.SKU);
+            await _requestHelperRepository.CheckSKU(updateRequest.SKU);
             // Update request properties
             request.Description = updateRequest.Description;
-            request.Name = updateRequest.ProductName;
+            request.Name = updateRequest.Name;
             request.Price = updateRequest.Price;
             request.Quantity = updateRequest.Quantity;
             request.CategoryId = updateRequest.CategoryId;
@@ -103,35 +91,18 @@ namespace InventoryManagmentSystem.Repositories.Classes
             }
 
             // Fetch the user details
-            var user = await GetUserByIdAsync(userId);
+            var user = _requestHelperRepository.GetUserById(userId);
             if (user == null)
             {
                 throw new InvalidOperationException($"User with ID {userId} not found.");
             }
 
             // Create a new request object based on the existing product
-            var newRequest = new Request
-            {
-                Name = existingProduct.Name,
-                Price = existingProduct.Price,
-                Quantity = existingProduct.Quantity,
-                SKU = existingProduct.SKU,
-                CategoryId = existingProduct.CategoryId,
-                SupplierId = existingProduct.SupplierId,
-                UserId = userId,
-                Description = existingProduct.Description,
-                TeamId = user.TeamId,
-                RequestType = "Delete Request",
-                CreatedOn = DateTime.UtcNow,
-                Status = true,
-                RquestStatus = "New Request"
-
-            };
-
-            // Add and save the new request
-            await _context.Requests.AddAsync(newRequest);
+            var newRequest = _requestHelperRepository.CreateRequestFromProduct(existingProduct, userId, user.TeamId, "Delete Request");
+            _context.Requests.Add(newRequest);
             await _context.SaveChangesAsync();
         }
+
         public async Task<bool> HasOnlyOneActiveRequestForProductAsync(string sku)
         {
             int activeRequestCount = await _context.Requests
@@ -139,34 +110,48 @@ namespace InventoryManagmentSystem.Repositories.Classes
                 .CountAsync();
             return activeRequestCount == 1;
         }
+        public ICollection<GetRequests> GetRequests(string viewName, string sortBy, string? userId, bool isAscending)
+        {
+            // Ensure sortBy is not null or empty
+            if (string.IsNullOrEmpty(sortBy))
+                throw new ArgumentException("Sort criteria cannot be null or empty.", nameof(sortBy));
 
-        // Utility method to fetch a user by ID
-        private async Task<User> GetUserByIdAsync(string userId)
-        {
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
+            // Dictionary to handle common views
+            var requestViews = new Dictionary<string, Func<ICollection<GetRequests>>>()
+    {
+        { "My Request", () => _requestHelperRepository.GetUserRequests(userId, sortBy, isAscending) },
+        { "All Requests", () => _requestHelperRepository.GetAllRequests(sortBy, isAscending) },
+        { "Active Requests", () => _requestHelperRepository.GetAllRequests(sortBy, isAscending) },
+        { "Inactive Requests", () => _requestHelperRepository.GetInactiveRequests(sortBy, isAscending) },
+    };
+
+            // Check if the view name exists in the dictionary
+            if (requestViews.ContainsKey(viewName))
             {
-                throw new InvalidOperationException($"User with ID {userId} not found.");
+                return requestViews[viewName]();
             }
-            return user;
-        }
-        private async Task CheckSKU(string newSKU)
-        {
-            var existingProduct = await _context.Products.FirstOrDefaultAsync(r => r.SKU == newSKU);
-            if (existingProduct != null && newSKU != existingProduct.SKU)
+
+            // For "Team Requests", retrieve the user and use TeamId for filtering
+            if (viewName == "Team Requests")
             {
-                throw new InvalidOperationException($"SKU '{newSKU}' already exists in the system.");
+                if (string.IsNullOrEmpty(userId))
+                    throw new ArgumentNullException(nameof(userId), "User ID cannot be null or empty.");
+
+                User user = _requestHelperRepository.GetUserById(userId);
+                return _requestHelperRepository.GetTeamRequests(user.TeamId, sortBy, isAscending);
             }
+
+            // Default case: fetch all requests with the associated entities
+            IEnumerable<Request> requests = _context.Requests
+                .Include(r => r.Category)
+                .Include(r => r.Supplier)
+                .Include(r => r.User)
+                .Include(r => r.Team)
+                .ToList();
+
+            // Sort the requests and return as GetRequests
+            return _requestHelperRepository.SortRequests(requests);
         }
-        private async Task HandleAddRequestAsync(AddRequest requestDetails)
-        {
-            // Check if the SKU already exists
-            bool skuExists = await _context.Products.AnyAsync(r => r.SKU == requestDetails.SKU);
-            if (skuExists)
-            {
-                // Log and throw exception if SKU already exists
-                throw new InvalidOperationException("SKU already exists in the system.");
-            }
-        }
+
     }
 }

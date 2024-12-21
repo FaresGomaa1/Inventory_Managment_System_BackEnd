@@ -9,5 +9,6 @@ namespace InventoryManagmentSystem.Repositories.Interfaces
         Task UpdateRequest(UpdateRequest updateRequest);
         Task DeleteProductRequest(string SKU, string userId);
         Task<bool> HasOnlyOneActiveRequestForProductAsync(string sku);
+        ICollection<GetRequests> GetRequests(string viewName, string sortBy, string? userId, bool isAscending);
     }
 }

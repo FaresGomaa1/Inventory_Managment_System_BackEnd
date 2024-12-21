@@ -9,7 +9,7 @@ namespace InventoryManagmentSystem.Controllers
     [ApiController]
     public class RequestController : ControllerBase
     {
-        private readonly IRequestRepository _requestRepository;
+        public readonly IRequestRepository _requestRepository;
 
         // Inject the IRequestRepository into the controller
         public RequestController(IRequestRepository requestRepository)
@@ -182,6 +182,47 @@ namespace InventoryManagmentSystem.Controllers
             {
                 // Log and return a generic error response
                 return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing the request.");
+            }
+        }
+        [HttpGet("GetRequests")]
+        [Authorize(Roles = "Staff Member, Staff Member Manager, Inventory Manager, Inventory Manager Manager, Department Manager, Department Manager Manager")]
+        public IActionResult GetRequests(
+            [FromQuery] string viewName,
+            [FromQuery] string sortBy,
+            [FromQuery] string? userId,
+            [FromQuery] bool isAscending)
+        {
+            try
+            {
+                // Call the repository to get the requests
+                var requests =  _requestRepository.GetRequests(viewName, sortBy, userId, isAscending);
+
+                if (requests == null)
+                {
+                    return NotFound(new
+                    {
+                        Message = "No requests found.",
+                        Timestamp = DateTime.UtcNow
+                    });
+                }
+
+                // Return the list of requests
+                return Ok(new
+                {
+                    Message = "Requests retrieved successfully.",
+                    Data = requests,
+                    Timestamp = DateTime.UtcNow
+                });
+            }
+            catch (Exception ex)
+            {
+                // Log and return a generic error response
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    Message = "An error occurred while processing the request.",
+                    Errors = ex.Message,
+                    Timestamp = DateTime.UtcNow
+                });
             }
         }
     }

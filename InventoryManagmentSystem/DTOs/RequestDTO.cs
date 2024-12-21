@@ -10,7 +10,7 @@ namespace InventoryManagmentSystem.DTOs
         [Required]
         public string RequestType { get; set; }
         [Required]
-        public string ProductName { get; set; }
+        public string Name { get; set; }
         [Required]
         public double Price { get; set; }
         [Required]
@@ -33,4 +33,21 @@ namespace InventoryManagmentSystem.DTOs
         [Required]
         public string RquestStatus { get; set; }
     }
+    public class GetRequests
+    {
+        public string RequestType { get; set; }
+        public string Name { get; set; }
+        public double Price { get; set; }
+        public string SKU { get; set; }
+        public int Quantity { get; set; }
+        public string Description { get; set; }
+        public bool Status { get; set; }
+        public string RquestStatus { get; set; }
+        public DateTime CreatedOn { get; set; }
+        public string Category { get; set; }
+        public string Supplier { get; set; }
+        public string User { get;set; }
+        public string Team { get; set; }
+    }
+
 }
