@@ -13,7 +13,6 @@ namespace InventoryManagmentSystem.Repositories.Classes
         private readonly UserManager<User> _userManager;
         private readonly IRequestHelperRepository _requestHelperRepository;
 
-
         // Inject dependencies into the repository
         public RequestRepository(InventoryManagmentContext context, UserManager<User> userManager, IRequestHelperRepository requestHelperRepository)
         {
@@ -55,11 +54,8 @@ namespace InventoryManagmentSystem.Repositories.Classes
             // Fetch the user details
             User user = _requestHelperRepository.GetUserById(updateRequest.UserId);
             // Fetch the request to be updated
-            var request = await _context.Requests.FirstOrDefaultAsync(r => r.Id == updateRequest.RequestId);
-            if (request == null)
-            {
-                throw new InvalidOperationException("Request not found");
-            }
+            Request request = await _context.Requests.FirstOrDefaultAsync(r => r.Id == updateRequest.RequestId) ?? throw new KeyNotFoundException($"There is no Request with Id {updateRequest.RequestId}");
+
             await _requestHelperRepository.CheckSKU(updateRequest.SKU);
             // Update request properties
             request.Description = updateRequest.Description;
@@ -68,6 +64,8 @@ namespace InventoryManagmentSystem.Repositories.Classes
             request.Quantity = updateRequest.Quantity;
             request.CategoryId = updateRequest.CategoryId;
             request.SupplierId = updateRequest.SupplierId;
+            if (request.RquestStatus == "Reject - Update")
+                request.RquestStatus = "Updated";
 
             // Save changes to the database
             await _context.SaveChangesAsync();
@@ -209,6 +207,7 @@ namespace InventoryManagmentSystem.Repositories.Classes
             {
                 request.InventoryManagerDecision = managerDecision.Decision;
                 request.InventoryManagerComment = managerDecision.Comment;
+                request = ChangeRequestStatus(request.InventoryManagerDecision, request, "InventoryManager");
             }
             else if (managerDecision.managerType.Equals("DepartmentManager", StringComparison.OrdinalIgnoreCase))
             {
@@ -218,6 +217,7 @@ namespace InventoryManagmentSystem.Repositories.Classes
 
                 request.DepartmentManagerDecision = managerDecision.Decision;
                 request.DepartmentManagerComment = managerDecision.Comment;
+                request = ChangeRequestStatus(request.InventoryManagerDecision, request, "DepartmentManager");
             }
             else
             {
@@ -241,6 +241,50 @@ namespace InventoryManagmentSystem.Repositories.Classes
         private bool IsRejectionDecision(string decision)
         {
             return decision == "Reject - Update" || decision == "Reject - Close";
+        }
+        private Request ChangeRequestStatus(string managerDecision, Request request, string managerType)
+        {
+            if (IsRejectionDecision(managerDecision))
+            {
+                HandleRejectionDecision(managerDecision, request);
+            }
+            else if (managerDecision == "Approved")
+            {
+                HandleApprovalDecision(managerType, request);
+            }
+
+            return request;
+        }
+        private void HandleRejectionDecision(string managerDecision, Request request)
+        {
+            switch (managerDecision)
+            {
+                case "Reject - Update":
+                    request.RquestStatus = "Reject - Update";
+                    request.UserId = string.Empty;
+                    request.TeamId = 1;
+                    break;
+
+                case "Reject - Close":
+                    request.RquestStatus = "Reject - Close";
+                    request.Status = false;
+                    break;
+            }
+        }
+        private void HandleApprovalDecision(string managerType, Request request)
+        {
+            switch (managerType)
+            {
+                case "InventoryManager":
+                    request.UserId = string.Empty;
+                    request.RquestStatus = "Approved By Inventory Manager";
+                    request.TeamId = 3;
+                    break;
+
+                case "DepartmentManager":
+                    request.RquestStatus = "Published";
+                    break;
+            }
         }
     }
 }
