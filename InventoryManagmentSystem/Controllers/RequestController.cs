@@ -21,6 +21,11 @@ namespace InventoryManagmentSystem.Controllers
         [Authorize(Roles = "Staff Member, Staff Member Manager")]
         public async Task<IActionResult> CreateRequest([FromBody] AddRequest requestDetails)
         {
+            // Ensure model state is valid
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { Message = "Invalid model data.", Errors = ModelState });
+            }
             if (requestDetails == null)
                 return BadRequest(new
                 {
@@ -225,5 +230,89 @@ namespace InventoryManagmentSystem.Controllers
                 });
             }
         }
+
+        [HttpGet("team/{managerId}")]
+        [Authorize(Roles = "Staff Member Manager, Inventory Manager Manager, Department Manager Manager")]
+        public IActionResult GetActiveRequestsForEachTeamMember([FromQuery] string managerId)
+        {
+            try
+            {
+                var activeRequests = _requestRepository.GetUsersWithActiveRequestsCount(managerId);
+
+                if (activeRequests == null || activeRequests.Count == 0)
+                {
+                    return NotFound(new
+                    {
+                        Message = "No active requests found for the specified manager.",
+                        Timestamp = DateTime.UtcNow
+                    });
+                }
+
+                return Ok(new
+                {
+                    Message = "Active requests retrieved successfully.",
+                    Data = activeRequests,
+                    Timestamp = DateTime.UtcNow
+                });
+            }
+            catch (Exception ex)
+            {
+
+                return StatusCode(500, new
+                {
+                    Message = "An error occurred while processing your request.",
+                    ErrorDetails = ex.Message,
+                    Timestamp = DateTime.UtcNow
+                });
+            }
+        }
+
+        [HttpPatch("update-manager-decision")]
+        [Authorize(Roles = "Inventory Manager, Inventory Manager Manager, Department Manager, Department Manager Manager")]
+        public async Task<IActionResult> UpdateManagerDecisionAsync([FromBody] ManagerDecision managerDecision)
+        {
+            // Ensure model state is valid
+            if (!ModelState.IsValid)
+                return BadRequest(new { Message = "Invalid model data.", Errors = ModelState });
+
+            // Validate the manager's decision data
+            if (managerDecision == null)
+                return BadRequest(new { Message = "Decision is required." });
+
+            try
+            {
+                // Handle the manager's decision asynchronously
+                await _requestRepository.HandleManagerDecisionAsync(managerDecision);
+
+                return Ok(new
+                {
+                    Message = "Manager decision updated successfully.",
+                    RequestId = managerDecision.RequestId,
+                    Decision = managerDecision.Decision,
+                    Comment = managerDecision.Comment
+                });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                // Handle not found exception (e.g., request not found)
+                return NotFound(new { Message = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                // Handle unauthorized access exception
+                return Unauthorized(new { Message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Handle invalid operation (e.g., invalid status)
+                return Conflict(new { Message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                // Catch any other general exceptions
+                return StatusCode(500, new { Message = "An error occurred while processing the request.", Error = ex.Message });
+            }
+        }
+
     }
 }

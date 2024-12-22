@@ -4,8 +4,6 @@ using InventoryManagmentSystem.Models;
 using InventoryManagmentSystem.Repositories.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Threading.Tasks;
 
 namespace InventoryManagmentSystem.Repositories.Classes
 {
@@ -72,10 +70,6 @@ namespace InventoryManagmentSystem.Repositories.Classes
             request.Quantity = updateRequest.Quantity;
             request.CategoryId = updateRequest.CategoryId;
             request.SupplierId = updateRequest.SupplierId;
-            request.UserId = updateRequest.UserId;
-            request.TeamId = user.TeamId;
-            request.RequestType = updateRequest.RequestType;
-            request.RquestStatus = updateRequest.RquestStatus;
 
             // Save changes to the database
             await _context.SaveChangesAsync();
@@ -110,6 +104,7 @@ namespace InventoryManagmentSystem.Repositories.Classes
                 .CountAsync();
             return activeRequestCount == 1;
         }
+
         public ICollection<GetRequests> GetRequests(string viewName, string sortBy, string? userId, bool isAscending)
         {
             // Ensure sortBy is not null or empty
@@ -153,5 +148,93 @@ namespace InventoryManagmentSystem.Repositories.Classes
             return _requestHelperRepository.SortRequests(requests);
         }
 
+        public ICollection<UserRequestInfo> GetUsersWithActiveRequestsCount(string managerId)
+        {
+            List<User> users = _context.Users
+                .Where(u => u.ManagerId == managerId)
+                .Include(u => u.Requests)
+                .ToList();
+
+            List<Request> activeRequests = _context.Requests
+                .Where(r => r.Status)
+                .ToList();
+
+            List<UserRequestInfo> result = new List<UserRequestInfo>();
+
+            HashSet<int> activeRequestIds = new HashSet<int>(activeRequests.Select(r => r.Id));
+
+            foreach (User user in users)
+            {
+                int activeRequestCount = user.Requests.Count(r => activeRequestIds.Contains(r.Id));
+
+                result.Add(new UserRequestInfo
+                {
+                    UserId = user.Id,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    Email = user.Email,
+                    PhoneNumber = user.PhoneNumber,
+                    ActiveRequestCount = activeRequestCount
+                });
+            }
+
+            return result;
+        }
+
+        public async Task AssignRequestToTeamMemberAsync(Assign assign)
+        {
+            User user = await _userManager.FindByIdAsync(assign.userId) ?? throw new KeyNotFoundException($"User with Id {assign.userId} not found.");
+
+            if (user.ManagerId != assign.managerId)
+                throw new UnauthorizedAccessException($"User with Id {assign.userId} does not belong to manager with Id {assign.managerId}.");
+
+            Request request = await _context.Requests.FirstOrDefaultAsync(r => r.Id == assign.requestId) ?? throw new KeyNotFoundException($"Request with Id {assign.requestId} not found.");
+
+            ValidateUserPermissionsForRequest(user, request);
+
+            request.UserId = user.Id;
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task HandleManagerDecisionAsync(ManagerDecision managerDecision)
+        {
+            if (!managerDecision.Decision && string.IsNullOrEmpty(managerDecision.Comment))
+                throw new ArgumentException("You need to add a comment when choosing 'No' for the decision.");
+
+            User user = await _userManager.FindByIdAsync(managerDecision.ManagerId) ?? throw new KeyNotFoundException($"User with Id {managerDecision.ManagerId} not found.");
+            Request request = await _context.Requests.FirstOrDefaultAsync(r => r.Id == managerDecision.RequestId) ?? throw new KeyNotFoundException($"Request with Id {managerDecision.RequestId} not found.");
+
+            ValidateUserPermissionsForRequest(user, request);
+
+            if (managerDecision.managerType.Equals("InventoryManager", StringComparison.OrdinalIgnoreCase))
+            {
+                request.InventoryManagerDecision = managerDecision.Decision;
+                request.InventoryManagerComment = managerDecision.Comment;
+            }
+            else if (managerDecision.managerType.Equals("DepartmentManager", StringComparison.OrdinalIgnoreCase))
+            {
+                request.DepartmentManagerDecision = managerDecision.Decision;
+                request.DepartmentManagerComment = managerDecision.Comment;
+            }
+            else
+            {
+                throw new ArgumentException($"Invalid manager type: {managerDecision.managerType}. Expected 'InventoryManager' or 'DepartmentManager'.");
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        private void ValidateUserPermissionsForRequest(User user, Request request)
+        {
+            if (user.TeamId != request.TeamId)
+                throw new UnauthorizedAccessException($"User with Id {user.Id} does not have permission to access Request with Id {request.Id} as it belongs to a different team.");
+
+            if (!request.Status)
+                throw new InvalidOperationException($"Request with Id {request.Id} is inactive.");
+
+            if (user.Id != request.UserId)
+                throw new InvalidOperationException($"Request with Id {request.Id} is assigned to another user. It cannot be accessed by user with Id {user.Id}.");
+        }
     }
 }
