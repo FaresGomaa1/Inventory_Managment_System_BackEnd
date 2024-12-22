@@ -23,10 +23,10 @@ namespace InventoryManagmentSystem.Models
         public string Description { get; set; }
         [Required]
         public DateTime CreatedOn { get; set; }
-        public bool? InventoryManagerDecision { get; set; }
+        public string? InventoryManagerDecision { get; set; }
         [MaxLength(500)]
         public string? InventoryManagerComment { get; set; }
-        public bool? DepartmentManagerDecision { get; set; }
+        public string? DepartmentManagerDecision { get; set; }
         [MaxLength(500)]
         public string? DepartmentManagerComment { get; set; }
         [Required]

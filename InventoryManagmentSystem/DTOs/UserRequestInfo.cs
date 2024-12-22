@@ -18,7 +18,7 @@ namespace InventoryManagmentSystem.DTOs
         [Required]
         public int RequestId { get; set; }
         [Required]
-        public bool Decision { get; set; }
+        public string Decision { get; set; }
         public string Comment { get; set; }
         [Required]
         public string managerType { get; set; }

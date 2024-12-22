@@ -46,9 +46,10 @@ namespace InventoryManagmentSystem.Repositories.Classes
                 throw new InvalidOperationException("SKU already exists in the system.");
             }
         }
-        public Request CreateRequestFromProduct(Product product, string userId, int? teamId, string requestType)
+        public Request CreateRequestFromProduct(Product product,string teamName)
         {
             if (product == null) throw new ArgumentNullException(nameof(product));
+            Team inventoryManagerTeam = _context.Teams.FirstOrDefault(t => t.Name == teamName) ?? throw new KeyNotFoundException($"There is no team with name {teamName}");
 
             return new Request
             {
@@ -59,17 +60,17 @@ namespace InventoryManagmentSystem.Repositories.Classes
                 Description = product.Description,
                 CategoryId = product.CategoryId,
                 SupplierId = product.SupplierId,
-                UserId = userId,
-                TeamId = teamId,
-                RequestType = requestType,
+                TeamId = inventoryManagerTeam.Id,
+                RequestType = "Delete Request",
                 CreatedOn = DateTime.UtcNow,
                 Status = true,
                 RquestStatus = "New Request"
             };
         }
-        public Request CreateRequestFromDetails(AddRequest requestDetails, string userId, int? teamId)
+        public Request CreateRequestFromDetails(AddRequest requestDetails, string teamName)
         {
             if (requestDetails == null) throw new ArgumentNullException(nameof(requestDetails));
+            Team inventoryManagerTeam = _context.Teams.FirstOrDefault(t => t.Name == teamName) ?? throw new KeyNotFoundException($"There is no team with name {teamName}");
 
             return new Request
             {
@@ -80,8 +81,7 @@ namespace InventoryManagmentSystem.Repositories.Classes
                 Description = requestDetails.Description,
                 CategoryId = requestDetails.CategoryId,
                 SupplierId = requestDetails.SupplierId,
-                UserId = userId,
-                TeamId = teamId,
+                TeamId = inventoryManagerTeam.Id,
                 RequestType = requestDetails.RequestType,
                 CreatedOn = DateTime.UtcNow,
                 Status = true,

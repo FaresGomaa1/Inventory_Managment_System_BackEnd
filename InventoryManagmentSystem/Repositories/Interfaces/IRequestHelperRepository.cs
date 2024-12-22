@@ -8,8 +8,8 @@ namespace InventoryManagmentSystem.Repositories.Interfaces
         User GetUserById(string userId);
         Task CheckSKU(string newSKU);
         Task HandleAddRequestAsync(AddRequest requestDetails);
-        Request CreateRequestFromDetails(AddRequest requestDetails, string userId, int? teamId);
-        Request CreateRequestFromProduct(Product product, string userId, int? teamId, string requestType);
+        Request CreateRequestFromDetails(AddRequest requestDetails, string teamName);
+        Request CreateRequestFromProduct(Product product, string teamName);
         ICollection<GetRequests> GetUserRequests(string userId, string sortBy, bool isAscending);
         ICollection<GetRequests> GetAllRequests(string sortBy, bool isAscending);
         ICollection<GetRequests> GetActiveRequests(string sortBy, bool isAscending);

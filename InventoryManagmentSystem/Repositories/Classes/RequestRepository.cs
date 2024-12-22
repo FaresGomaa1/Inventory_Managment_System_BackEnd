@@ -41,11 +41,9 @@ namespace InventoryManagmentSystem.Repositories.Classes
                 default:
                     throw new ArgumentException($"Unsupported request type: {requestDetails.RequestType}", nameof(requestDetails.RequestType));
             }
-            // Fetch the user details
-            User user = _requestHelperRepository.GetUserById(requestDetails.UserId);
 
             // Create a new request based on the provided details
-            var newRequest = _requestHelperRepository.CreateRequestFromDetails(requestDetails, user.Id, user.TeamId);
+            var newRequest = _requestHelperRepository.CreateRequestFromDetails(requestDetails, "Inventory Manager");
 
             // Save the new request to the database
             await _context.Requests.AddAsync(newRequest);
@@ -92,7 +90,7 @@ namespace InventoryManagmentSystem.Repositories.Classes
             }
 
             // Create a new request object based on the existing product
-            var newRequest = _requestHelperRepository.CreateRequestFromProduct(existingProduct, userId, user.TeamId, "Delete Request");
+            var newRequest = _requestHelperRepository.CreateRequestFromProduct(existingProduct, "Inventory Manager");
             _context.Requests.Add(newRequest);
             await _context.SaveChangesAsync();
         }
@@ -199,8 +197,8 @@ namespace InventoryManagmentSystem.Repositories.Classes
 
         public async Task HandleManagerDecisionAsync(ManagerDecision managerDecision)
         {
-            if (!managerDecision.Decision && string.IsNullOrEmpty(managerDecision.Comment))
-                throw new ArgumentException("You need to add a comment when choosing 'No' for the decision.");
+            if (IsRejectionDecision(managerDecision.Decision) && string.IsNullOrWhiteSpace(managerDecision.Comment))
+                throw new ArgumentException("A comment is required when rejecting the decision.");
 
             User user = await _userManager.FindByIdAsync(managerDecision.ManagerId) ?? throw new KeyNotFoundException($"User with Id {managerDecision.ManagerId} not found.");
             Request request = await _context.Requests.FirstOrDefaultAsync(r => r.Id == managerDecision.RequestId) ?? throw new KeyNotFoundException($"Request with Id {managerDecision.RequestId} not found.");
@@ -214,6 +212,10 @@ namespace InventoryManagmentSystem.Repositories.Classes
             }
             else if (managerDecision.managerType.Equals("DepartmentManager", StringComparison.OrdinalIgnoreCase))
             {
+                if (IsRejectionDecision(request.InventoryManagerDecision))
+                    throw new InvalidOperationException($"The decision cannot be added because the request with ID {request.Id} is not in your stage.");
+                
+
                 request.DepartmentManagerDecision = managerDecision.Decision;
                 request.DepartmentManagerComment = managerDecision.Comment;
             }
@@ -235,6 +237,10 @@ namespace InventoryManagmentSystem.Repositories.Classes
 
             if (user.Id != request.UserId)
                 throw new InvalidOperationException($"Request with Id {request.Id} is assigned to another user. It cannot be accessed by user with Id {user.Id}.");
+        }
+        private bool IsRejectionDecision(string decision)
+        {
+            return decision == "Reject - Update" || decision == "Reject - Close";
         }
     }
 }
