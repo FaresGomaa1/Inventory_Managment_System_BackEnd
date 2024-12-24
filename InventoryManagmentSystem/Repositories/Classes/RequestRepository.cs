@@ -12,13 +12,15 @@ namespace InventoryManagmentSystem.Repositories.Classes
         private readonly InventoryManagmentContext _context;
         private readonly UserManager<User> _userManager;
         private readonly IRequestHelperRepository _requestHelperRepository;
+        private readonly IProductRepository _productRepository;
 
         // Inject dependencies into the repository
-        public RequestRepository(InventoryManagmentContext context, UserManager<User> userManager, IRequestHelperRepository requestHelperRepository)
+        public RequestRepository(InventoryManagmentContext context, UserManager<User> userManager, IRequestHelperRepository requestHelperRepository, IProductRepository productRepository)  
         {
             _context = context;
             _userManager = userManager;
             _requestHelperRepository = requestHelperRepository;
+            _productRepository = productRepository;
         }
 
         public async Task CreateRequest(AddRequest requestDetails)
@@ -286,9 +288,78 @@ namespace InventoryManagmentSystem.Repositories.Classes
                     break;
 
                 case "DepartmentManager":
+                    if (request.RequestType == "Update Request")
+                    {
+                        UpdateProductDTO updateProductDTO = new UpdateProductDTO()
+                        {
+                            Name = request.Name,
+                            Price = request.Price,
+                            SKU = request.SKU,
+                            Quantity = request.Quantity,
+                            Description = request.Description,
+                            CategoryId = request.CategoryId,
+                            SupplierId = request.SupplierId
+                        };
+                        _productRepository.UpdateProductAsync(updateProductDTO);
+                    }
+                    else if (request.RequestType == "Add Request")
+                    {
+                        AddProductDTO addProductDTO = new AddProductDTO()
+                        {
+                            Name = request.Name,
+                            Price = request.Price,
+                            SKU = request.SKU,
+                            Quantity = request.Quantity,
+                            Description = request.Description,
+                            CategoryId = request.CategoryId,
+                            SupplierId = request.SupplierId,
+                            Created_On = DateTime.Now,
+                        };
+                        _productRepository.AddProductAsync(addProductDTO);
+                    }
                     request.RquestStatus = "Published";
+                    request.Status = false;
                     break;
             }
         }
+        public async Task<string> GenerateSKU(string SKU, string requestType)
+        {
+            if (requestType == "Update Request")
+            {
+                Product existingProduct = await _context.Products.FirstOrDefaultAsync(p => p.SKU == SKU);
+                if (existingProduct != null && existingProduct.SKU != SKU)
+                {
+                    string SKUfirstTwoLetter = SKU.Substring(0, 2);
+                    int i = 0;
+                    string trySku = SKU;
+                    while (existingProduct != null && existingProduct.SKU != trySku)
+                    {
+                         trySku = $"{SKUfirstTwoLetter}-{i}";
+                        existingProduct = await _context.Products.FirstOrDefaultAsync(p => p.SKU == trySku);
+                        i++;
+                    }
+                    return trySku;
+                }
+            }
+            else if (requestType == "Add Request")
+            {
+                Product existingProduct = await _context.Products.FirstOrDefaultAsync(p => p.SKU == SKU);
+                if (existingProduct == null)
+                {
+                    string SKUfirstTwoLetter = SKU.Substring(0, 2);
+                    int i = 0;
+                    string trySku = SKU;
+                    while (existingProduct != null)
+                    {
+                         trySku = $"{SKUfirstTwoLetter}-{i}";
+                        existingProduct = await _context.Products.FirstOrDefaultAsync(p => p.SKU == trySku);
+                        i++;
+                    }
+                    return trySku;
+                }
+            }
+            return "";
+        }
+
     }
 }
