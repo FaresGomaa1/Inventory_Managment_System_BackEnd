@@ -238,10 +238,12 @@ namespace InventoryManagmentSystem.Repositories.Classes
             if (user.Id != request.UserId)
                 throw new InvalidOperationException($"Request with Id {request.Id} is assigned to another user. It cannot be accessed by user with Id {user.Id}.");
         }
+
         private bool IsRejectionDecision(string decision)
         {
             return decision == "Reject - Update" || decision == "Reject - Close";
         }
+
         private Request ChangeRequestStatus(string managerDecision, Request request, string managerType)
         {
             if (IsRejectionDecision(managerDecision))
@@ -255,6 +257,7 @@ namespace InventoryManagmentSystem.Repositories.Classes
 
             return request;
         }
+
         private void HandleRejectionDecision(string managerDecision, Request request)
         {
             switch (managerDecision)
@@ -271,6 +274,7 @@ namespace InventoryManagmentSystem.Repositories.Classes
                     break;
             }
         }
+
         private void HandleApprovalDecision(string managerType, Request request)
         {
             switch (managerType)
