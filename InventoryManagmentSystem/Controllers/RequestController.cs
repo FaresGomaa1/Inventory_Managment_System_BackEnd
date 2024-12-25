@@ -313,6 +313,32 @@ namespace InventoryManagmentSystem.Controllers
                 return StatusCode(500, new { Message = "An error occurred while processing the request.", Error = ex.Message });
             }
         }
+        [HttpGet("GenerateSKU")]
+        //[Authorize(Roles = "Staff Member, Staff Member Manager")]
+        public async Task<IActionResult> GenerateSKU(string sku, string requestType)
+        {
+            if (string.IsNullOrWhiteSpace(sku) || string.IsNullOrWhiteSpace(requestType))
+            {
+                return BadRequest("SKU and Request Type cannot be null or empty.");
+            }
+
+            try
+            {
+                string result = await _requestRepository.GenerateSKU(sku, requestType);
+                if (result == null)
+                {
+                    return NotFound("SKU generation failed or no data found.");
+                }
+
+                return Ok(new {message = result });
+            }
+            catch (Exception ex)
+            {
+
+                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while generating the SKU.");
+            }
+        }
+
 
     }
 }

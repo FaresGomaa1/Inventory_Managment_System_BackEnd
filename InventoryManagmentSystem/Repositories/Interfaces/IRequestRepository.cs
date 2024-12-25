@@ -13,5 +13,6 @@ namespace InventoryManagmentSystem.Repositories.Interfaces
         ICollection<UserRequestInfo> GetUsersWithActiveRequestsCount(string managerId);
         Task AssignRequestToTeamMemberAsync(Assign assign);
         Task HandleManagerDecisionAsync(ManagerDecision managerDecision);
+        Task<string> GenerateSKU(string SKU, string requestType);
     }
 }
