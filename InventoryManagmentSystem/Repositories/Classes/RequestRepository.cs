@@ -344,7 +344,7 @@ namespace InventoryManagmentSystem.Repositories.Classes
             else if (requestType == "Add Request")
             {
                 Product existingProduct = await _context.Products.FirstOrDefaultAsync(p => p.SKU == SKU);
-                if (existingProduct == null)
+                if (existingProduct != null)
                 {
                     string SKUfirstTwoLetter = SKU.Substring(0, 2);
                     int i = 0;
@@ -358,7 +358,7 @@ namespace InventoryManagmentSystem.Repositories.Classes
                     return trySku;
                 }
             }
-            return "";
+            return SKU;
         }
 
     }
