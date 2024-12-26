@@ -314,7 +314,7 @@ namespace InventoryManagmentSystem.Controllers
             }
         }
         [HttpGet("GenerateSKU")]
-        //[Authorize(Roles = "Staff Member, Staff Member Manager")]
+        [Authorize(Roles = "Staff Member, Staff Member Manager")]
         public async Task<IActionResult> GenerateSKU(string sku, string requestType)
         {
             if (string.IsNullOrWhiteSpace(sku) || string.IsNullOrWhiteSpace(requestType))
