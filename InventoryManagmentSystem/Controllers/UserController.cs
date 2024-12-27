@@ -114,6 +114,26 @@ namespace InventoryManagmentSystem.Controllers
                 Token = loginResult.Token
             });
         }
+        [HttpGet("Managers")]
+        public async Task<IActionResult> GetAllManagers([FromQuery] string managerTeam)
+        {
+            try
+            {
+                var managers = await _userRepository.GetAllManagersAsync(managerTeam);
+
+                if (managers == null || !managers.Any())
+                {
+                    return NotFound("No managers found.");
+                }
+
+                return Ok(managers);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new {message = ex.Message});
+            }
+        }
+
 
     }
 }

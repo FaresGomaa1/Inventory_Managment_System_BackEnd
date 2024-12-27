@@ -1,7 +1,9 @@
-﻿using InventoryManagmentSystem.DTOs;
+﻿using InventoryManagmentSystem.Data;
+using InventoryManagmentSystem.DTOs;
 using InventoryManagmentSystem.Models;
 using InventoryManagmentSystem.Repositories.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace InventoryManagmentSystem.Repositories.Classes
 {
@@ -10,12 +12,14 @@ namespace InventoryManagmentSystem.Repositories.Classes
         public readonly UserManager<User> _userManager;
         public readonly RoleManager<IdentityRole> _roleManager;
         public readonly IUserHelperRepository _helperRepository;
-
-        public UserRepository(UserManager<User> userManager, RoleManager<IdentityRole> roleManager, IUserHelperRepository helperRepository)
+        private readonly InventoryManagmentContext _context;
+        public UserRepository(UserManager<User> userManager, RoleManager<IdentityRole> roleManager, IUserHelperRepository helperRepository,
+            InventoryManagmentContext context)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _helperRepository = helperRepository;
+            _context = context;
         }
         public async Task<(bool IsSuccess, string Message, string Token)> LoginUserAsync(LoginDTO model)
         {
@@ -109,6 +113,23 @@ namespace InventoryManagmentSystem.Repositories.Classes
             await _helperRepository.AssignRolesToUser(model.Role, user);
 
             return "User created successfully!";
+        }
+        public async Task<ICollection<GetUsers>> GetAllManagersAsync(string managerTeam)
+        {
+            return await _context.Users
+                .Include(u => u.Team)
+                .Where(u => u.ManagerId == null && u.Team.Name == managerTeam)
+                .Select(user => new GetUsers
+                {
+                    Id = user.Id,
+                    FirstName = user.FirstName ?? "Unknown",
+                    LastName = user.LastName ?? "Unknown",
+                    UserName = user.UserName ?? "Unknown",
+                    PhoneNumber = user.PhoneNumber ?? "Unknown",
+                    Email = user.Email ?? "Unknown",
+                    Team = user.Team != null ? user.Team.Name : "No Team Assigned",
+                })
+                .ToListAsync();
         }
     }
 }

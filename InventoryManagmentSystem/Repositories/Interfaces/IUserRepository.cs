@@ -6,5 +6,6 @@ namespace InventoryManagmentSystem.Repositories.Interfaces
     {
         Task<(bool IsSuccess, string Message, string Token)> LoginUserAsync(LoginDTO model);
         Task<string> CreateUser(RegisterDTO model);
+        Task<ICollection<GetUsers>> GetAllManagersAsync(string managerTeam);
     }
 }
