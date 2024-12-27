@@ -173,12 +173,12 @@ namespace InventoryManagmentSystem.Repositories.Classes
                 "Price" => r => r.Price,
                 "SKU" => r => r.SKU,
                 "Quantity" => r => r.Quantity,
-                "Team" => r => r.Team.Name,
-                "Category" => r => r.Category.Name,
-                "Supplier First Name" => r => r.Supplier.FirstName,
-                "Supplier Last Name" => r => r.Supplier.LastName,
-                "User First Name" => r => r.User.FirstName,
-                "User Last Name" => r => r.User.LastName,
+                "Team" => r => r.Team?.Name,
+                "Category" => r => r.Category?.Name,  // Null check for Category
+                "Supplier First Name" => r => r.Supplier?.FirstName,  // Null check for Supplier
+                "Supplier Last Name" => r => r.Supplier?.LastName,  // Null check for Supplier
+                "User First Name" => r => r.User?.FirstName,  // Null check for User
+                "User Last Name" => r => r.User?.LastName,  // Null check for User
                 "CreatedOn" => r => r.CreatedOn,
                 _ => throw new ArgumentException($"Invalid sort criteria: {sortBy}", nameof(sortBy))
             };
@@ -192,6 +192,7 @@ namespace InventoryManagmentSystem.Repositories.Classes
             var result = requests.Select(r => new GetRequests
             {
                 Status = r.Status,
+                Id = r.Id,
                 Name = r.Name,
                 RquestStatus = r.RquestStatus,
                 RequestType = r.RequestType,
@@ -200,14 +201,15 @@ namespace InventoryManagmentSystem.Repositories.Classes
                 Quantity = r.Quantity,
                 Description = r.Description,
                 CreatedOn = r.CreatedOn,
-                Category = r.Category.Name,
-                Supplier = $"{r.Supplier.FirstName} {r.Supplier.LastName}",
-                User = $"{r.User.FirstName} {r.User.LastName}",
-                Team = r.Team.Name,
+                Category = r.Category?.Name,  // Null check for Category
+                Supplier = $"{r.Supplier?.FirstName} {r.Supplier?.LastName}",  // Null check for Supplier
+                User = $"{r.User?.FirstName} {r.User?.LastName}",  // Null check for User
+                Team = r.Team?.Name,  // Null check for Team
             }).ToList();
 
             return result;
         }
+
 
 
     }

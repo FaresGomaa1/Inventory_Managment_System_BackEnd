@@ -108,14 +108,16 @@ namespace InventoryManagmentSystem.Repositories.Classes
             // Ensure sortBy is not null or empty
             if (string.IsNullOrEmpty(sortBy))
                 throw new ArgumentException("Sort criteria cannot be null or empty.", nameof(sortBy));
-
+            User user =  _context.Users.FirstOrDefault(u => u.Id == userId);
             // Dictionary to handle common views
             var requestViews = new Dictionary<string, Func<ICollection<GetRequests>>>()
     {
         { "My Request", () => _requestHelperRepository.GetUserRequests(userId, sortBy, isAscending) },
         { "All Requests", () => _requestHelperRepository.GetAllRequests(sortBy, isAscending) },
-        { "Active Requests", () => _requestHelperRepository.GetAllRequests(sortBy, isAscending) },
+        { "Active Requests", () => _requestHelperRepository.GetActiveRequests(sortBy, isAscending) },
         { "Inactive Requests", () => _requestHelperRepository.GetInactiveRequests(sortBy, isAscending) },
+        { "Inactive Requests", () => _requestHelperRepository.GetInactiveRequests(sortBy, isAscending) },
+        { "Team Requests", () => _requestHelperRepository.GetTeamRequests(user.TeamId,sortBy, isAscending) },
     };
 
             // Check if the view name exists in the dictionary

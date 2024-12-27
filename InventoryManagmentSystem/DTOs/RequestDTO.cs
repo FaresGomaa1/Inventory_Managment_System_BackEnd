@@ -35,6 +35,7 @@ namespace InventoryManagmentSystem.DTOs
     }
     public class GetRequests
     {
+        public int Id { get; set; }
         public string RequestType { get; set; }
         public string Name { get; set; }
         public double Price { get; set; }
