@@ -14,5 +14,6 @@ namespace InventoryManagmentSystem.Repositories.Interfaces
         Task AssignRequestToTeamMemberAsync(Assign assign);
         Task HandleManagerDecisionAsync(ManagerDecision managerDecision);
         Task<string> GenerateSKU(string SKU, string requestType);
+        Task<GetRequests> GetRequestById(int id);
     }
 }

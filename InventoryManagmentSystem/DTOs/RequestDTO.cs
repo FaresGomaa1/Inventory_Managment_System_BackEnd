@@ -46,9 +46,13 @@ namespace InventoryManagmentSystem.DTOs
         public string RquestStatus { get; set; }
         public DateTime CreatedOn { get; set; }
         public string Category { get; set; }
+        public int CategoryId { get; set; }
         public string Supplier { get; set; }
+        public int SupplierId { get; set; }
         public string User { get;set; }
+        public string UserId { get; set; }  
         public string Team { get; set; }
+        public int TeamId { get; set; } 
     }
 
 }

@@ -2,6 +2,7 @@
 using InventoryManagmentSystem.DTOs;
 using InventoryManagmentSystem.Models;
 using InventoryManagmentSystem.Repositories.Interfaces;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,6 +24,39 @@ namespace InventoryManagmentSystem.Repositories.Classes
             _productRepository = productRepository;
         }
 
+        public async Task<GetRequests> GetRequestById(int id)
+        {
+            // Try to fetch the request from the database and handle the case where not found.
+            Request request = await _context.Requests
+                .Include(r => r.User)
+                .Include(r => r.Category)
+                .Include(r => r.Supplier)
+                .Include(r => r.Team)
+                .FirstOrDefaultAsync(r => r.Id == id) ?? throw new KeyNotFoundException($"Request with id {id} not found.");
+
+            // Map the Request entity to a DTO or view model
+            return new GetRequests()
+            {
+                Id = request.Id,
+                RequestType = request.RequestType,
+                Name = request.Name,
+                Price = request.Price,
+                SKU = request.SKU,
+                Quantity = request.Quantity,
+                Description = request.Description,
+                Status = request.Status,
+                RquestStatus = request.RquestStatus,
+                CreatedOn = request.CreatedOn,
+                Category = request.Category?.Name,
+                CategoryId = request.CategoryId,
+                Supplier = $"{request.Supplier?.FirstName} {request.Supplier?.LastName}",
+                SupplierId = request.SupplierId,
+                User = $"{request.User?.FirstName} {request.User?.LastName}",
+                UserId = request.UserId ?? "not found",
+                Team = request.Team?.Name,
+                TeamId = request.Team.Id,
+            };
+        }
         public async Task CreateRequest(AddRequest requestDetails)
         {
             if (requestDetails.RequestType != "Update Request" && requestDetails.RequestType != "Add Request")
@@ -116,7 +150,6 @@ namespace InventoryManagmentSystem.Repositories.Classes
         { "All Requests", () => _requestHelperRepository.GetAllRequests(sortBy, isAscending) },
         { "Active Requests", () => _requestHelperRepository.GetActiveRequests(sortBy, isAscending) },
         { "Inactive Requests", () => _requestHelperRepository.GetInactiveRequests(sortBy, isAscending) },
-        { "Inactive Requests", () => _requestHelperRepository.GetInactiveRequests(sortBy, isAscending) },
         { "Team Requests", () => _requestHelperRepository.GetTeamRequests(user.TeamId,sortBy, isAscending) },
     };
 
@@ -132,7 +165,6 @@ namespace InventoryManagmentSystem.Repositories.Classes
                 if (string.IsNullOrEmpty(userId))
                     throw new ArgumentNullException(nameof(userId), "User ID cannot be null or empty.");
 
-                User user = _requestHelperRepository.GetUserById(userId);
                 return _requestHelperRepository.GetTeamRequests(user.TeamId, sortBy, isAscending);
             }
 
@@ -346,15 +378,17 @@ namespace InventoryManagmentSystem.Repositories.Classes
             else if (requestType == "Add Request")
             {
                 Product existingProduct = await _context.Products.FirstOrDefaultAsync(p => p.SKU == SKU);
-                if (existingProduct != null)
+                Request existingRequest = await _context.Requests.FirstOrDefaultAsync(r=>r.SKU == SKU);
+                if (existingProduct != null || existingRequest != null)
                 {
                     string SKUfirstTwoLetter = SKU.Substring(0, 2);
                     int i = 0;
                     string trySku = SKU;
-                    while (existingProduct != null)
+                    while (existingProduct != null || existingRequest != null)
                     {
                          trySku = $"{SKUfirstTwoLetter}-{i}";
                         existingProduct = await _context.Products.FirstOrDefaultAsync(p => p.SKU == trySku);
+                         existingRequest = await _context.Requests.FirstOrDefaultAsync(r => r.SKU == trySku);
                         i++;
                     }
                     return trySku;

@@ -36,12 +36,12 @@ namespace InventoryManagmentSystem.Controllers
         }
 
         // GET: api/Product/{id}
-        [HttpGet("{id}")]
-        public async Task<ActionResult<GetProductDTO>> GetProduct(int id)
+        [HttpGet("{sku}")]
+        public async Task<ActionResult<GetProductDTO>> GetProduct(string sku)
         {
             try
             {
-                var product = await _productRepository.GetProductAsync(id);
+                var product = await _productRepository.GetProductAsync(sku);
                 return Ok(product);
             }
             catch (KeyNotFoundException ex)

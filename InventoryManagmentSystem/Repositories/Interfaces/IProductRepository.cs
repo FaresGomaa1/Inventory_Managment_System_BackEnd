@@ -7,7 +7,7 @@ namespace InventoryManagmentSystem.Repositories.Interfaces
         Task AddProductAsync(AddProductDTO addProductDTO);
         Task UpdateProductAsync(UpdateProductDTO updateProductDTO);
         Task<ICollection<GetProductDTO>> GetAllProductsAsync();
-        Task<GetProductDTO> GetProductAsync(int id);
+        Task<GetProductDTO> GetProductAsync(string sku);
         Task DeleteProductAsync(int id);
     }
 }

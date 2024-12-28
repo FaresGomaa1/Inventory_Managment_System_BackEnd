@@ -5,6 +5,7 @@ namespace InventoryManagmentSystem.DTOs
     public class GetProductDTO: BaseClass
     {
         public int Id { get; set; }
+        public int CategoryId { get; set; }
         public string CategoryName { get; set; }
         public string SupplierFullName { get; set; }
         public int SupplierId { get; set; }

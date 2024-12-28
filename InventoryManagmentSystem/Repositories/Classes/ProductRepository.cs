@@ -83,17 +83,17 @@ namespace InventoryManagmentSystem.Repositories.Classes
             return products;
         }
 
-        public async Task<GetProductDTO> GetProductAsync(int id)
+        public async Task<GetProductDTO> GetProductAsync(string sku)
         {
             var product = await _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Supplier)
                 .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.Id == id);
+                .FirstOrDefaultAsync(p => p.SKU == sku);
 
             if (product == null)
             {
-                throw new KeyNotFoundException($"Product with Id {id} not found.");
+                throw new KeyNotFoundException($"Product with Id {sku} not found.");
             }
 
             return new GetProductDTO
@@ -105,6 +105,7 @@ namespace InventoryManagmentSystem.Repositories.Classes
                 Quantity = product.Quantity,
                 Description = product.Description,
                 Created_On = product.Created_On,
+                CategoryId = product.Category.Id,
                 CategoryName = product.Category.Name,
                 SupplierFullName = $"{product.Supplier.FirstName} {product.Supplier.LastName}",
                 SupplierId = product.SupplierId

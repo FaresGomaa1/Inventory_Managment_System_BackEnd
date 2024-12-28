@@ -319,7 +319,10 @@ namespace InventoryManagmentSystem.Controllers
         {
             if (string.IsNullOrWhiteSpace(sku) || string.IsNullOrWhiteSpace(requestType))
             {
-                return BadRequest("SKU and Request Type cannot be null or empty.");
+                return BadRequest(new
+                {
+                    message = "SKU and Request Type cannot be null or empty."
+                });
             }
 
             try
@@ -338,7 +341,23 @@ namespace InventoryManagmentSystem.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while generating the SKU.");
             }
         }
+        [HttpGet("GetById")]
+        public async Task<IActionResult> GetRequestByIdAsync(int id)
+        {
+            try
+            {
+                var result = await _requestRepository.GetRequestById(id);
 
-
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while processing your request", error = ex.Message });
+            }
+        }
     }
 }
