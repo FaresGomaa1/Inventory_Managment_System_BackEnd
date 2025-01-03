@@ -9,7 +9,7 @@ namespace InventoryManagmentSystem.Models
         [Required]
         public bool Status { get; set; }
         [Required]
-        public string RquestStatus {  get; set; }
+        public string RequestStatus {  get; set; }
         [Required]
         public string RequestType { get; set; }
         [Required]

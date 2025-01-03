@@ -75,7 +75,7 @@ namespace InventoryManagmentSystem.Repositories.Classes
             // Step 3: Handle Manager Assignment
             if (!model.IsManager && !string.IsNullOrEmpty(model.ManagerId))
             {
-                user.TeamId = _helperRepository.AssignTeamId(model.Role);
+                user.TeamId = await _helperRepository.AssignTeamId(model.Role);
                 user.ManagerId = await _helperRepository.AssignManager(model, user.TeamId);
             }
             else
@@ -90,7 +90,7 @@ namespace InventoryManagmentSystem.Repositories.Classes
                     if (string.Equals(lastWord, "Manager", StringComparison.OrdinalIgnoreCase))
                     {
                         // Step 4: Assign Team Based on Role
-                        user.TeamId = _helperRepository.AssignTeamId(model.Role);
+                        user.TeamId = await _helperRepository.AssignTeamId(model.Role);
                     }
                     else
                     {

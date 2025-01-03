@@ -8,6 +8,6 @@ namespace InventoryManagmentSystem.Repositories.Interfaces
         Task UpdateProductAsync(UpdateProductDTO updateProductDTO);
         Task<ICollection<GetProductDTO>> GetAllProductsAsync();
         Task<GetProductDTO> GetProductAsync(string sku);
-        Task DeleteProductAsync(int id);
+        Task DeleteProductAsync(string sku);
     }
 }

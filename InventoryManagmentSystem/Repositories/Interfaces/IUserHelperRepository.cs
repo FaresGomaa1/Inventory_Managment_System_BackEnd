@@ -11,6 +11,6 @@ namespace InventoryManagmentSystem.Repositories.Interfaces
         Task EnsureRoleExistsAndAssign(string roleName, User user);
         Task ValidateUserDetails(RegisterDTO model);
         Task<string?> AssignManager(RegisterDTO model, int userTeamId);
-        int AssignTeamId(string role);
+        Task<int> AssignTeamId(string role);
     }
 }

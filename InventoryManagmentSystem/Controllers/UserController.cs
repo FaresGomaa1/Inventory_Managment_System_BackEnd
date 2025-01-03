@@ -84,9 +84,6 @@ namespace InventoryManagmentSystem.Controllers
             }
         }
 
-
-
-
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDTO model)
         {

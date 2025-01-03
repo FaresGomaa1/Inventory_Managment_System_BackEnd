@@ -119,12 +119,12 @@ namespace InventoryManagmentSystem.Controllers
         }
 
         // DELETE: api/Product/{id}
-        [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteProduct(int id)
+        [HttpDelete("{sku}")]
+        public async Task<ActionResult> DeleteProduct(string sku)
         {
             try
             {
-                await _productRepository.DeleteProductAsync(id);
+                await _productRepository.DeleteProductAsync(sku);
                 return NoContent();
             }
             catch (KeyNotFoundException ex)

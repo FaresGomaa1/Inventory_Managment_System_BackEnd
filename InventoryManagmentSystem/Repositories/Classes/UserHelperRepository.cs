@@ -19,7 +19,7 @@ namespace InventoryManagmentSystem.Repositories.Classes
         {
             _userManager = userManager;
             _roleManager = roleManager;
-        }   
+        }
         public async Task<string> GenerateJwtToken(User user)
         {
             // Get user roles
@@ -27,14 +27,26 @@ namespace InventoryManagmentSystem.Repositories.Classes
 
             // Create claims
             var claims = new List<Claim>
-                                {
-                                    new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
-                                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                                    new Claim(ClaimTypes.NameIdentifier, user.Id)
-                                };
+    {
+                new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(ClaimTypes.NameIdentifier, user.Id)
+    };
+
+            if (!string.IsNullOrEmpty(user.ManagerId))
+            {
+                claims.Add(new Claim("ManagerId", user.ManagerId));
+            }
+            if (user.TeamId != null)
+            {
+                claims.Add(new Claim("TeamId", user.TeamId.ToString()));
+            }
 
             // Add role claims
-            claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+            foreach (var role in roles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
 
             // Define signing credentials
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("YourLongerSuperSecretKeyHere123456"));
@@ -130,7 +142,7 @@ namespace InventoryManagmentSystem.Repositories.Classes
 
             return model.ManagerId;
         }
-        public int AssignTeamId(string role)
+        public async Task<int> AssignTeamId(string role)
         {
             return role switch
             {

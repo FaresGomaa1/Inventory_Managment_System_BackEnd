@@ -141,16 +141,6 @@ namespace InventoryManagmentSystem.Controllers
                     Errors = ModelState.Values.SelectMany(v => v.Errors)
                               .Select(e => e.ErrorMessage)
                 });
-            if (await _requestRepository.HasOnlyOneActiveRequestForProductAsync(updateRequest.SKU))
-            {
-                // If there is already one active request, return a conflict response
-                return Conflict(new
-                {
-                    Message = "Conflict: There is already an active request for this product.",
-                    Errors = "An active request already exists for the given SKU.",
-                    SKU = updateRequest.SKU
-                });
-            }
             try
             {
                 // Call the repository to update the request
@@ -233,13 +223,13 @@ namespace InventoryManagmentSystem.Controllers
 
         [HttpGet("team/{managerId}")]
         [Authorize(Roles = "Staff Member Manager, Inventory Manager Manager, Department Manager Manager")]
-        public IActionResult GetActiveRequestsForEachTeamMember([FromQuery] string managerId)
+        public IActionResult GetActiveRequestsForEachTeamMember(string managerId)
         {
             try
             {
                 var activeRequests = _requestRepository.GetUsersWithActiveRequestsCount(managerId);
 
-                if (activeRequests == null || activeRequests.Count == 0)
+                if (activeRequests == null)
                 {
                     return NotFound(new
                     {
@@ -248,12 +238,7 @@ namespace InventoryManagmentSystem.Controllers
                     });
                 }
 
-                return Ok(new
-                {
-                    Message = "Active requests retrieved successfully.",
-                    Data = activeRequests,
-                    Timestamp = DateTime.UtcNow
-                });
+                return Ok(activeRequests);
             }
             catch (Exception ex)
             {
@@ -359,5 +344,32 @@ namespace InventoryManagmentSystem.Controllers
                 return StatusCode(500, new { message = "An error occurred while processing your request", error = ex.Message });
             }
         }
+        // PATCH API to assign request to a team member
+        [HttpPatch("Assign")]
+        [Authorize(Roles = "Staff Member Manager, Inventory Manager Manager, Department Manager Manager")]
+        public async Task<ActionResult> AssignRecord([FromBody] Assign assign)
+        {
+            try
+            {
+                await _requestRepository.AssignRequestToTeamMemberAsync(assign);
+                return Ok(new
+                {
+                    message = "Request successfully assigned."
+                });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Internal server error: " + ex.Message);
+            }
+        }
+
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.Identity.Client;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Security.Cryptography.X509Certificates;
 
 namespace InventoryManagmentSystem.DTOs
 {
@@ -31,7 +32,7 @@ namespace InventoryManagmentSystem.DTOs
         [Required]
         public int RequestId { get; set; }
         [Required]
-        public string RquestStatus { get; set; }
+        public string RequestStatus { get; set; }
     }
     public class GetRequests
     {
@@ -43,7 +44,11 @@ namespace InventoryManagmentSystem.DTOs
         public int Quantity { get; set; }
         public string Description { get; set; }
         public bool Status { get; set; }
-        public string RquestStatus { get; set; }
+        public string? InventoryManagerDecision { get; set; }
+        public string? InventoryManagerComment { get; set; }
+        public string? DepartmentManagerDecision { get; set; }
+        public string? DepartmentManagerComment { get; set; }
+        public string RequestStatus { get; set; }
         public DateTime CreatedOn { get; set; }
         public string Category { get; set; }
         public int CategoryId { get; set; }

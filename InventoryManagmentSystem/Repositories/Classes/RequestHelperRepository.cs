@@ -19,13 +19,9 @@ namespace InventoryManagmentSystem.Repositories.Classes
             _userManager = userManager;
         }
         // Utility method to fetch a user by ID
-        public User GetUserById(string userId)
+        public async Task<User> GetUserById(string userId)
         {
-            User user = _userManager.FindByIdAsync(userId).Result;
-            if (user == null)
-            {
-                throw new InvalidOperationException($"User with ID {userId} not found.");
-            }
+            User user = _userManager.FindByIdAsync(userId).Result ?? throw new KeyNotFoundException("Not Found");
             return user;
         }
         public async Task CheckSKU(string newSKU)
@@ -46,7 +42,7 @@ namespace InventoryManagmentSystem.Repositories.Classes
                 throw new InvalidOperationException("SKU already exists in the system.");
             }
         }
-        public Request CreateRequestFromProduct(Product product,string teamName)
+        public async Task<Request> CreateRequestFromProduct(Product product,string teamName)
         {
             if (product == null) throw new ArgumentNullException(nameof(product));
             Team inventoryManagerTeam = _context.Teams.FirstOrDefault(t => t.Name == teamName) ?? throw new KeyNotFoundException($"There is no team with name {teamName}");
@@ -64,10 +60,10 @@ namespace InventoryManagmentSystem.Repositories.Classes
                 RequestType = "Delete Request",
                 CreatedOn = DateTime.UtcNow,
                 Status = true,
-                RquestStatus = "New Request"
+                RequestStatus = "New Request"
             };
         }
-        public Request CreateRequestFromDetails(AddRequest requestDetails, string teamName)
+        public async Task<Request> CreateRequestFromDetails(AddRequest requestDetails, string teamName)
         {
             if (requestDetails == null) throw new ArgumentNullException(nameof(requestDetails));
             Team inventoryManagerTeam = _context.Teams.FirstOrDefault(t => t.Name == teamName) ?? throw new KeyNotFoundException($"There is no team with name {teamName}");
@@ -85,12 +81,12 @@ namespace InventoryManagmentSystem.Repositories.Classes
                 RequestType = requestDetails.RequestType,
                 CreatedOn = DateTime.UtcNow,
                 Status = true,
-                RquestStatus = "New Request"
+                RequestStatus = "New Request"
             };
         }
 
         // Retrieves user-specific requests and sorts them
-        public ICollection<GetRequests> GetUserRequests(string userId, string sortBy, bool isAscending)
+        public async Task<ICollection<GetRequests>> GetUserRequests(string userId, string sortBy, bool isAscending)
         {
             var requests = _context.Requests
                 .Where(r => r.UserId == userId)
@@ -100,11 +96,11 @@ namespace InventoryManagmentSystem.Repositories.Classes
                 .Include(r => r.Team)
                 .ToList();
 
-            return SortRequests(requests, sortBy, isAscending);
+            return await SortRequests(requests, sortBy, isAscending);
         }
 
         // Retrieves all requests and sorts them
-        public ICollection<GetRequests> GetAllRequests(string sortBy, bool isAscending)
+        public async Task<ICollection<GetRequests>> GetAllRequests(string sortBy, bool isAscending)
         {
             var requests = _context.Requests
                 .Include(r => r.Category)
@@ -112,11 +108,11 @@ namespace InventoryManagmentSystem.Repositories.Classes
                 .Include(r => r.User)
                 .Include(r => r.Team).
                 ToList();
-            return SortRequests(requests, sortBy, isAscending);
+            return await SortRequests(requests, sortBy, isAscending);
         }
 
         // Retrieves only active requests and sorts them
-        public ICollection<GetRequests> GetActiveRequests(string sortBy, bool isAscending)
+        public async Task<ICollection<GetRequests>> GetActiveRequests(string sortBy, bool isAscending)
         {
             var activeRequests = _context.Requests
                 .Where(r => r.Status == true)
@@ -126,11 +122,11 @@ namespace InventoryManagmentSystem.Repositories.Classes
                 .Include(r => r.Team)
                 .ToList();
 
-            return SortRequests(activeRequests, sortBy, isAscending);
+            return await SortRequests(activeRequests, sortBy, isAscending);
         }
 
         // Retrieves only inactive requests and sorts them
-        public ICollection<GetRequests> GetInactiveRequests(string sortBy, bool isAscending)
+        public async Task<ICollection<GetRequests>> GetInactiveRequests(string sortBy, bool isAscending)
         {
             var inactiveRequests = _context.Requests
                 .Where(r => r.Status == false)
@@ -140,11 +136,11 @@ namespace InventoryManagmentSystem.Repositories.Classes
                 .Include(r => r.Team)
                 .ToList();
 
-            return SortRequests(inactiveRequests, sortBy, isAscending);
+            return await SortRequests(inactiveRequests, sortBy, isAscending);
         }
 
         // Retrieves team-specific requests and sorts them
-        public ICollection<GetRequests> GetTeamRequests(int teamId, string sortBy, bool isAscending)
+        public async Task<ICollection<GetRequests>> GetTeamRequests(int teamId, string sortBy, bool isAscending)
         {
             var teamRequests = _context.Requests
                 .Where(r => r.TeamId == teamId && string.IsNullOrEmpty(r.UserId))
@@ -154,10 +150,10 @@ namespace InventoryManagmentSystem.Repositories.Classes
                 .Include(r => r.Team)
                 .ToList();
 
-            return SortRequests(teamRequests, sortBy, isAscending);
+            return await SortRequests(teamRequests, sortBy, isAscending);
         }
         // Helper method to sort requests based on a criteria
-        public ICollection<GetRequests> SortRequests(IEnumerable<Request> requests, string sortBy = "Name", bool isAscending = true)
+        public async Task<ICollection<GetRequests>> SortRequests(IEnumerable<Request> requests, string sortBy = "Name", bool isAscending = true)
         {
             if (requests == null)
                 throw new ArgumentNullException(nameof(requests), "Requests cannot be null");
@@ -194,7 +190,7 @@ namespace InventoryManagmentSystem.Repositories.Classes
                 Status = r.Status,
                 Id = r.Id,
                 Name = r.Name,
-                RquestStatus = r.RquestStatus,
+                RequestStatus = r.RequestStatus,
                 RequestType = r.RequestType,
                 Price = r.Price,
                 SKU = r.SKU,

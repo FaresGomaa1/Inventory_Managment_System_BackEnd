@@ -2,7 +2,6 @@
 using InventoryManagmentSystem.DTOs;
 using InventoryManagmentSystem.Models;
 using InventoryManagmentSystem.Repositories.Interfaces;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -45,15 +44,19 @@ namespace InventoryManagmentSystem.Repositories.Classes
                 Quantity = request.Quantity,
                 Description = request.Description,
                 Status = request.Status,
-                RquestStatus = request.RquestStatus,
+                InventoryManagerComment = request.InventoryManagerComment,
+                InventoryManagerDecision = request.InventoryManagerDecision,
+                DepartmentManagerComment = request.DepartmentManagerComment,
+                DepartmentManagerDecision = request.DepartmentManagerDecision,
+                RequestStatus = request.RequestStatus,
                 CreatedOn = request.CreatedOn,
-                Category = request.Category?.Name,
+                Category = request.Category?.Name ?? "No Catefory foumd",
                 CategoryId = request.CategoryId,
                 Supplier = $"{request.Supplier?.FirstName} {request.Supplier?.LastName}",
                 SupplierId = request.SupplierId,
                 User = $"{request.User?.FirstName} {request.User?.LastName}",
                 UserId = request.UserId ?? "not found",
-                Team = request.Team?.Name,
+                Team = request.Team?.Name ?? "No Team foumd",
                 TeamId = request.Team.Id,
             };
         }
@@ -81,18 +84,17 @@ namespace InventoryManagmentSystem.Repositories.Classes
             var newRequest = _requestHelperRepository.CreateRequestFromDetails(requestDetails, "Inventory Manager");
 
             // Save the new request to the database
-            await _context.Requests.AddAsync(newRequest);
+            await _context.Requests.AddAsync(await newRequest);
             await _context.SaveChangesAsync();
         }
 
         public async Task UpdateRequest(UpdateRequest updateRequest)
         {
             // Fetch the user details
-            User user = _requestHelperRepository.GetUserById(updateRequest.UserId);
+            User user = await _requestHelperRepository.GetUserById(updateRequest.UserId);
             // Fetch the request to be updated
             Request request = await _context.Requests.FirstOrDefaultAsync(r => r.Id == updateRequest.RequestId) ?? throw new KeyNotFoundException($"There is no Request with Id {updateRequest.RequestId}");
 
-            await _requestHelperRepository.CheckSKU(updateRequest.SKU);
             // Update request properties
             request.Description = updateRequest.Description;
             request.Name = updateRequest.Name;
@@ -100,8 +102,9 @@ namespace InventoryManagmentSystem.Repositories.Classes
             request.Quantity = updateRequest.Quantity;
             request.CategoryId = updateRequest.CategoryId;
             request.SupplierId = updateRequest.SupplierId;
-            if (request.RquestStatus == "Reject - Update")
-                request.RquestStatus = "Updated";
+            request.RequestStatus = "Updated";
+            request.TeamId = 2;
+            request.UserId = null;
 
             // Save changes to the database
             await _context.SaveChangesAsync();
@@ -125,7 +128,7 @@ namespace InventoryManagmentSystem.Repositories.Classes
 
             // Create a new request object based on the existing product
             var newRequest = _requestHelperRepository.CreateRequestFromProduct(existingProduct, "Inventory Manager");
-            _context.Requests.Add(newRequest);
+            _context.Requests.Add(await newRequest);
             await _context.SaveChangesAsync();
         }
 
@@ -137,14 +140,14 @@ namespace InventoryManagmentSystem.Repositories.Classes
             return activeRequestCount == 1;
         }
 
-        public ICollection<GetRequests> GetRequests(string viewName, string sortBy, string? userId, bool isAscending)
+        public async Task<ICollection<GetRequests>> GetRequests(string viewName, string sortBy, string? userId, bool isAscending)
         {
             // Ensure sortBy is not null or empty
             if (string.IsNullOrEmpty(sortBy))
                 throw new ArgumentException("Sort criteria cannot be null or empty.", nameof(sortBy));
             User user =  _context.Users.FirstOrDefault(u => u.Id == userId);
             // Dictionary to handle common views
-            var requestViews = new Dictionary<string, Func<ICollection<GetRequests>>>()
+            var requestViews = new Dictionary<string, Func<Task<ICollection<GetRequests>>>>()
     {
         { "My Request", () => _requestHelperRepository.GetUserRequests(userId, sortBy, isAscending) },
         { "All Requests", () => _requestHelperRepository.GetAllRequests(sortBy, isAscending) },
@@ -156,7 +159,7 @@ namespace InventoryManagmentSystem.Repositories.Classes
             // Check if the view name exists in the dictionary
             if (requestViews.ContainsKey(viewName))
             {
-                return requestViews[viewName]();
+                return await requestViews[viewName]();
             }
 
             // For "Team Requests", retrieve the user and use TeamId for filtering
@@ -165,7 +168,7 @@ namespace InventoryManagmentSystem.Repositories.Classes
                 if (string.IsNullOrEmpty(userId))
                     throw new ArgumentNullException(nameof(userId), "User ID cannot be null or empty.");
 
-                return _requestHelperRepository.GetTeamRequests(user.TeamId, sortBy, isAscending);
+                return await _requestHelperRepository.GetTeamRequests(user.TeamId, sortBy, isAscending);
             }
 
             // Default case: fetch all requests with the associated entities
@@ -177,41 +180,37 @@ namespace InventoryManagmentSystem.Repositories.Classes
                 .ToList();
 
             // Sort the requests and return as GetRequests
-            return _requestHelperRepository.SortRequests(requests);
+            return await _requestHelperRepository.SortRequests(requests);
         }
 
-        public ICollection<UserRequestInfo> GetUsersWithActiveRequestsCount(string managerId)
+        public async Task<ICollection<UserRequestInfo>> GetUsersWithActiveRequestsCount(string managerId)
         {
-            List<User> users = _context.Users
+            var usersWithRequests = _context.Users
                 .Where(u => u.ManagerId == managerId)
                 .Include(u => u.Requests)
                 .ToList();
 
-            List<Request> activeRequests = _context.Requests
+            var activeRequestIds = _context.Requests
                 .Where(r => r.Status)
-                .ToList();
+                .Select(r => r.Id)
+                .ToHashSet();
 
-            List<UserRequestInfo> result = new List<UserRequestInfo>();
-
-            HashSet<int> activeRequestIds = new HashSet<int>(activeRequests.Select(r => r.Id));
-
-            foreach (User user in users)
-            {
-                int activeRequestCount = user.Requests.Count(r => activeRequestIds.Contains(r.Id));
-
-                result.Add(new UserRequestInfo
+            var result = usersWithRequests
+                .Select(user => new UserRequestInfo
                 {
                     UserId = user.Id,
                     FirstName = user.FirstName,
                     LastName = user.LastName,
                     Email = user.Email,
                     PhoneNumber = user.PhoneNumber,
-                    ActiveRequestCount = activeRequestCount
-                });
-            }
+                    ActiveRequestCount = user.Requests.Count(r => activeRequestIds.Contains(r.Id))
+                })
+                .OrderBy(info => info.ActiveRequestCount)
+                .ToList();
 
             return result;
         }
+
 
         public async Task AssignRequestToTeamMemberAsync(Assign assign)
         {
@@ -231,7 +230,7 @@ namespace InventoryManagmentSystem.Repositories.Classes
 
         public async Task HandleManagerDecisionAsync(ManagerDecision managerDecision)
         {
-            if (IsRejectionDecision(managerDecision.Decision) && string.IsNullOrWhiteSpace(managerDecision.Comment))
+            if (await IsRejectionDecision(managerDecision.Decision) && string.IsNullOrWhiteSpace(managerDecision.Comment))
                 throw new ArgumentException("A comment is required when rejecting the decision.");
 
             User user = await _userManager.FindByIdAsync(managerDecision.ManagerId) ?? throw new KeyNotFoundException($"User with Id {managerDecision.ManagerId} not found.");
@@ -243,17 +242,17 @@ namespace InventoryManagmentSystem.Repositories.Classes
             {
                 request.InventoryManagerDecision = managerDecision.Decision;
                 request.InventoryManagerComment = managerDecision.Comment;
-                request = ChangeRequestStatus(request.InventoryManagerDecision, request, "InventoryManager");
+                request = await ChangeRequestStatus(request.InventoryManagerDecision, request, "InventoryManager");
             }
             else if (managerDecision.managerType.Equals("DepartmentManager", StringComparison.OrdinalIgnoreCase))
             {
-                if (IsRejectionDecision(request.InventoryManagerDecision))
+                if (await IsRejectionDecision(request.InventoryManagerDecision))
                     throw new InvalidOperationException($"The decision cannot be added because the request with ID {request.Id} is not in your stage.");
                 
 
                 request.DepartmentManagerDecision = managerDecision.Decision;
                 request.DepartmentManagerComment = managerDecision.Comment;
-                request = ChangeRequestStatus(request.InventoryManagerDecision, request, "DepartmentManager");
+                request = await ChangeRequestStatus(request.InventoryManagerDecision, request, "DepartmentManager");
             }
             else
             {
@@ -263,30 +262,30 @@ namespace InventoryManagmentSystem.Repositories.Classes
             await _context.SaveChangesAsync();
         }
 
-        private void ValidateUserPermissionsForRequest(User user, Request request)
+        private async Task ValidateUserPermissionsForRequest(User user, Request request)
         {
+            //if (!string.IsNullOrEmpty(request.UserId))
+            //    throw new InvalidOperationException($"Request with Id {request.Id} is assigned to another user. It cannot be accessed by user with Id {user.Id}.");
+
             if (user.TeamId != request.TeamId)
                 throw new UnauthorizedAccessException($"User with Id {user.Id} does not have permission to access Request with Id {request.Id} as it belongs to a different team.");
 
             if (!request.Status)
                 throw new InvalidOperationException($"Request with Id {request.Id} is inactive.");
-
-            if (user.Id != request.UserId)
-                throw new InvalidOperationException($"Request with Id {request.Id} is assigned to another user. It cannot be accessed by user with Id {user.Id}.");
         }
 
-        private bool IsRejectionDecision(string decision)
+        private async Task<bool> IsRejectionDecision(string decision)
         {
             return decision == "Reject - Update" || decision == "Reject - Close";
         }
 
-        private Request ChangeRequestStatus(string managerDecision, Request request, string managerType)
+        private  async Task<Request> ChangeRequestStatus(string managerDecision, Request request, string managerType)
         {
-            if (IsRejectionDecision(managerDecision))
+            if (await IsRejectionDecision(managerDecision))
             {
                 HandleRejectionDecision(managerDecision, request);
             }
-            else if (managerDecision == "Approved")
+            else if (managerDecision == "Approve")
             {
                 HandleApprovalDecision(managerType, request);
             }
@@ -294,30 +293,30 @@ namespace InventoryManagmentSystem.Repositories.Classes
             return request;
         }
 
-        private void HandleRejectionDecision(string managerDecision, Request request)
+        private async Task HandleRejectionDecision(string managerDecision, Request request)
         {
             switch (managerDecision)
             {
                 case "Reject - Update":
-                    request.RquestStatus = "Reject - Update";
-                    request.UserId = string.Empty;
+                    request.RequestStatus = "Reject - Update";
+                    request.UserId = null;
                     request.TeamId = 1;
                     break;
 
                 case "Reject - Close":
-                    request.RquestStatus = "Reject - Close";
+                    request.RequestStatus = "Reject - Close";
                     request.Status = false;
                     break;
             }
         }
 
-        private void HandleApprovalDecision(string managerType, Request request)
+        private async Task HandleApprovalDecision(string managerType, Request request)
         {
             switch (managerType)
             {
                 case "InventoryManager":
-                    request.UserId = string.Empty;
-                    request.RquestStatus = "Approved By Inventory Manager";
+                    request.UserId = null;
+                    request.RequestStatus = "Approved By Inventory Manager";
                     request.TeamId = 3;
                     break;
 
@@ -334,7 +333,7 @@ namespace InventoryManagmentSystem.Repositories.Classes
                             CategoryId = request.CategoryId,
                             SupplierId = request.SupplierId
                         };
-                        _productRepository.UpdateProductAsync(updateProductDTO);
+                        await _productRepository.UpdateProductAsync(updateProductDTO);
                     }
                     else if (request.RequestType == "Add Request")
                     {
@@ -349,11 +348,16 @@ namespace InventoryManagmentSystem.Repositories.Classes
                             SupplierId = request.SupplierId,
                             Created_On = DateTime.Now,
                         };
-                        _productRepository.AddProductAsync(addProductDTO);
+                        await _productRepository.AddProductAsync(addProductDTO);
                     }
-                    request.RquestStatus = "Published";
+                    else if(request.RequestType == "Delete Request")
+                    {
+                        await _productRepository.DeleteProductAsync(request.SKU);
+                    }
+                    request.RequestStatus = "Published";
                     request.Status = false;
                     break;
+
             }
         }
         public async Task<string> GenerateSKU(string SKU, string requestType)

@@ -47,11 +47,13 @@ namespace InventoryManagmentSystem.Repositories.Classes
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteProductAsync(int id)
+        public async Task DeleteProductAsync(string sku)
         {
-            var product = await _context.Products.FindAsync(id) ?? throw new KeyNotFoundException($"Product with Id {id} not found.");
+            var product = await _context.Products
+                                  .FirstOrDefaultAsync(p => p.SKU == sku)
+                                  ?? throw new KeyNotFoundException($"Product with SKU {sku} not found.");
             _context.Products.Remove(product);
-            await _context.SaveChangesAsync();
+           // await _context.SaveChangesAsync();
         }
 
         public async Task<ICollection<GetProductDTO>> GetAllProductsAsync()
@@ -116,17 +118,27 @@ namespace InventoryManagmentSystem.Repositories.Classes
         {
             await  _requestHelperRepository.CheckSKU(updateProductDTO.SKU);
 
-            var product = await _context.Products.FindAsync(updateProductDTO.Id) ?? throw new KeyNotFoundException($"Product with Id {updateProductDTO.Id} not found.");
-            product.Name = updateProductDTO.Name;
-            product.Price = updateProductDTO.Price;
-            product.SKU = updateProductDTO.SKU;
-            product.Quantity = updateProductDTO.Quantity;
-            product.Description = updateProductDTO.Description;
-            product.CategoryId = updateProductDTO.CategoryId;
-            product.SupplierId = updateProductDTO.SupplierId;
+            try
+            {
+                var product = await _context.Products
+                                 .FirstOrDefaultAsync(p => p.SKU == updateProductDTO.SKU)
+                                 ?? throw new KeyNotFoundException($"Product with SKU {updateProductDTO.SKU} not found.");
+                product.Name = updateProductDTO.Name;
+                product.Price = updateProductDTO.Price;
+                product.SKU = updateProductDTO.SKU;
+                product.Quantity = updateProductDTO.Quantity;
+                product.Description = updateProductDTO.Description;
+                product.CategoryId = updateProductDTO.CategoryId;
+                product.SupplierId = updateProductDTO.SupplierId;
 
-            _context.Products.Update(product);
-            await _context.SaveChangesAsync();
+                _context.Products.Update(product);
+                //await _context.SaveChangesAsync();
+            }
+            catch (Exception ex) 
+            {
+                var aa = ex;
+            }
+
         }
     }
 }
